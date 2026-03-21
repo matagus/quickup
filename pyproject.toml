@@ -50,6 +50,7 @@ quickup = "quickup.cli.main:run_app"
 
 [project.urls]
 Homepage = "https://github.com/matagus/quickup"
+Documentation = "https://quickup.readthedocs.io/en/latest/"
 Issues = "https://github.com/matagus/quickup/issues"
 Changelog = "https://github.com/matagus/quickup/releases"
 Repository = "https://github.com/matagus/quickup"
