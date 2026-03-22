@@ -235,7 +235,8 @@ def get_current_sprint_list(team, space):
     """Auto-detect current sprint list from team's lists.
 
     Searches for lists containing "sprint" or "iteration" in the name (case-insensitive).
-    Sorts candidates by ID descending (most recent first) and returns the first match.
+    Prefers the sprint explicitly marked as "started" (active). Falls back to sorting by ID
+    descending (most recent first) if no started sprint is found.
 
     Args:
         team: Team object.
@@ -260,7 +261,12 @@ def get_current_sprint_list(team, space):
     if not sprint_lists:
         raise ListNotFoundError(hint="No lists found with 'sprint' or 'iteration' in the name")
 
-    # Sort by ID descending (most recent first)
+    # Prefer the sprint explicitly marked as started (currently active)
+    active_sprints = [li for li in sprint_lists if getattr(li, "status", None) == "started"]
+    if active_sprints:
+        return active_sprints[0]
+
+    # Fallback: sort by ID descending (most recent first)
     sprint_lists.sort(key=lambda x: x.id, reverse=True)
 
     return sprint_lists[0]

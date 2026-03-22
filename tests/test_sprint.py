@@ -153,3 +153,81 @@ class TestGetCurrentSprintList:
 
         result = get_current_sprint_list(mock_team, mock_space)
         assert result == sprint_list
+
+    def test_returns_started_sprint(self):
+        """Test returning the sprint marked as started (active), regardless of ID."""
+        mock_space = Mock(id="space-123")
+
+        sprint_old = Mock()
+        sprint_old.name = "Sprint 1"
+        sprint_old.id = "list-005"  # Higher ID, but not started
+        sprint_old.status = None
+        sprint_old.space_id = "space-123"
+
+        sprint_active = Mock()
+        sprint_active.name = "Sprint 2"
+        sprint_active.id = "list-002"  # Lower ID, but this is the active one
+        sprint_active.status = "started"
+        sprint_active.space_id = "space-123"
+
+        mock_project = Mock()
+        mock_project.lists = [sprint_old, sprint_active]
+
+        mock_space.projects = [mock_project]
+        mock_team = Mock()
+        mock_team.spaces = [mock_space]
+
+        result = get_current_sprint_list(mock_team, mock_space)
+        assert result == sprint_active
+
+    def test_falls_back_to_id_sort_when_no_status(self):
+        """Test fallback to ID sort when no status field is present."""
+        mock_space = Mock(id="space-123")
+
+        sprint_old = Mock()
+        sprint_old.name = "Sprint 1"
+        sprint_old.id = "list-001"
+        sprint_old.space_id = "space-123"
+        # No status attribute
+
+        sprint_new = Mock()
+        sprint_new.name = "Sprint 2"
+        sprint_new.id = "list-002"
+        sprint_new.space_id = "space-123"
+        # No status attribute
+
+        mock_project = Mock()
+        mock_project.lists = [sprint_old, sprint_new]
+
+        mock_space.projects = [mock_project]
+        mock_team = Mock()
+        mock_team.spaces = [mock_space]
+
+        result = get_current_sprint_list(mock_team, mock_space)
+        assert result == sprint_new  # Highest ID
+
+    def test_falls_back_to_id_sort_when_none_started(self):
+        """Test fallback to ID sort when no sprint is marked as started."""
+        mock_space = Mock(id="space-123")
+
+        sprint_past = Mock()
+        sprint_past.name = "Sprint 1"
+        sprint_past.id = "list-001"
+        sprint_past.status = "closed"
+        sprint_past.space_id = "space-123"
+
+        sprint_future = Mock()
+        sprint_future.name = "Sprint 2"
+        sprint_future.id = "list-002"
+        sprint_future.status = None  # Not yet started
+        sprint_future.space_id = "space-123"
+
+        mock_project = Mock()
+        mock_project.lists = [sprint_past, sprint_future]
+
+        mock_space.projects = [mock_project]
+        mock_team = Mock()
+        mock_team.spaces = [mock_space]
+
+        result = get_current_sprint_list(mock_team, mock_space)
+        assert result == sprint_future  # Highest ID since no "started" status
