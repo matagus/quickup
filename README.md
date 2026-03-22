@@ -11,7 +11,7 @@ A simple, lightweight, and beautiful console-based client for ClickUp that lets 
 directly from your command line. View tasks grouped by status, assignee, or priority, update task statuses, and
 auto-detect your current sprint. It features interactive mode for easy navigation and caching for fast performance.
 
-![QuickUp! in action](https://github.com/matagus/quickup/blob/main/screenshots/one.png)
+![QuickUp! in action](https://raw.githubusercontent.com/matagus/quickup/main/screenshots/demo.gif)
 
 ## Features
 
