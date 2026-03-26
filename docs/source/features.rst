@@ -90,6 +90,24 @@ Group tasks by different criteria:
    # Group by priority
    quickup --team 123 --list 456 --group-by priority
 
+Task Comments
+-------------
+
+Post comments on tasks directly from the CLI or by piping text from stdin:
+
+.. code-block:: bash
+
+   # Post a comment with --text
+   quickup comment 123456 --text "Looks good!"
+
+   # Pipe from another command
+   echo "Automated comment" | quickup comment 123456
+
+   # Notify all task watchers
+   quickup comment 123456 --text "Please review" --notify-all
+
+Long comments are truncated in the confirmation output for readability.
+
 Sprint Detection
 ----------------
 

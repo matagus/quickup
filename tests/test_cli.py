@@ -7,7 +7,7 @@ import pytest
 
 from quickup.cli.api_client import get_list_for, get_project_for
 from quickup.cli.exceptions import ClickupyError, TokenError
-from quickup.cli.main import app, list_tasks, run_app, show_task, sprint, update_task
+from quickup.cli.main import app, comment_task, list_tasks, run_app, show_task, sprint, update_task
 
 
 class TestApp:
@@ -125,6 +125,14 @@ class TestTokenMissingScenarios:
 
         with pytest.raises(TokenError):
             update_task(task_id="task-123", status="Done")
+
+    @patch("quickup.cli.main.init_environ")
+    def test_comment_task_raises_token_error(self, mock_environ):
+        """Test comment_task raises TokenError when TOKEN not set."""
+        mock_environ.return_value = {}  # No TOKEN
+
+        with pytest.raises(TokenError):
+            comment_task(task_id="task-123", text="hello")
 
 
 class TestListTasks:

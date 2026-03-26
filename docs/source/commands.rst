@@ -279,3 +279,54 @@ With team specification:
 .. code-block:: bash
 
    quickup update 123456 --status "Done" --team 12345
+
+``quickup comment`` - Post a Comment
+-------------------------------------
+
+Post a comment on a specific task. Provide text via ``--text`` or pipe from stdin.
+
+Synopsis
+~~~~~~~~
+
+.. code-block:: bash
+
+   quickup comment <task_id> [OPTIONS]
+
+Arguments
+~~~~~~~~~
+
+.. option:: task_id
+
+   ClickUp task ID
+
+Options
+~~~~~~~
+
+.. option:: --text
+
+   Comment text to post. If omitted, reads from stdin.
+
+.. option:: --notify-all
+
+   Notify all task watchers (default: false)
+
+Examples
+~~~~~~~~
+
+Post a comment:
+
+.. code-block:: bash
+
+   quickup comment 123456 --text "This looks good, merging now"
+
+Notify all watchers:
+
+.. code-block:: bash
+
+   quickup comment 123456 --text "Attention everyone" --notify-all
+
+Pipe comment from stdin:
+
+.. code-block:: bash
+
+   echo "Comment from a script" | quickup comment 123456

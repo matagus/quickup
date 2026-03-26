@@ -20,6 +20,7 @@ auto-detect your current sprint. It features interactive mode for easy navigatio
 - **Grouping**: Group tasks by status, assignee, or priority
 - **Task Details**: View detailed information about a specific task
 - **Task Updates**: Update task status with confirmation display
+- **Task Comments**: Post comments on tasks from the CLI or via piped input
 - **Sprint Detection**: Auto-detect current sprint/iteration lists
 - **Interactive Mode**: Navigate through Team → Space → Project → List hierarchy with prompts
 - **Caching**: Disk-based caching for improved performance (24h for teams/lists, 5min for tasks)
@@ -172,6 +173,26 @@ quickup update <task_id> --status "Done" --team <team_id>
 - `--status`: New status name (e.g., "To Do", "In Progress", "Done")
 - `--team`: Team ID (required if multiple teams exist)
 - `-i, --interactive`: Enable interactive mode
+
+### `quickup comment <task_id>` - Post a Comment
+
+Post a comment on a specific task.
+
+```bash
+# Post a comment
+quickup comment <task_id> --text "This is my comment"
+
+# Notify all task watchers
+quickup comment <task_id> --text "Attention everyone" --notify-all
+
+# Pipe comment from stdin
+echo "Piped comment" | quickup comment <task_id>
+```
+
+**Options:**
+- `task_id`: ClickUp task ID
+- `--text`: Comment text to post (reads from stdin if omitted)
+- `--notify-all`: Notify all task watchers
 
 ## Interactive Mode
 

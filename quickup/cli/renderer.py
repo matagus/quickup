@@ -358,3 +358,18 @@ def render_task_update(task_id, old_status, new_status):
         f"{Color.YELLOW}{old_status}{Color.OFF} → {Color.GREEN}{new_status}{Color.OFF}"
     )
     print(f"\n{Color.GREEN}✓{Color.OFF} Status updated successfully")
+
+
+def render_comment_posted(task_id, comment_text):
+    """Render comment posted confirmation.
+
+    Args:
+        task_id: ClickUp task ID.
+        comment_text: The comment text that was posted.
+    """
+    print(f"{Effect.BOLD}{Color.GREEN}Comment Posted{Color.OFF}{Effect.BOLD_OFF}")
+    print(f"{'─' * 40}")
+    print(f"\n{Effect.BOLD}Task ID:{Effect.BOLD_OFF} {task_id}")
+    display_text = comment_text[:80] + "..." if len(comment_text) > 80 else comment_text
+    print(f"{Effect.BOLD}Comment:{Effect.BOLD_OFF} {display_text}")
+    print(f"\n{Color.GREEN}✓{Color.OFF} Comment posted successfully")

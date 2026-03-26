@@ -1,16 +1,18 @@
 """Main CLI entry point for QuickUp! using cyclopts."""
 
+import sys
 from typing import Annotated, cast
 
 from cyclopts import App, Parameter
 from pyclickup import ClickUp
+import requests
 
 from .api_client import get_current_sprint_list, get_list_for, get_project_for, get_space_for, get_team
 from .auth import delete_oauth_token, perform_oauth_login, save_oauth_token
 from .cache import get_task_data, maybe_warmup
 from .config import init_environ
 from .exceptions import ClickupyError, OAuthError, TokenError, handle_exception
-from .renderer import render_list, render_task_detail, render_task_update
+from .renderer import render_comment_posted, render_list, render_task_detail, render_task_update
 
 app = App(name="quickup", help="A simple and beautiful console-based client for ClickUp.")
 
@@ -261,6 +263,52 @@ def update_task(
     task.update(status=status)
 
     render_task_update(task_id, old_status, status)
+
+
+@app.command(name="comment")
+def comment_task(
+    task_id: Annotated[str, Parameter(name="task_id", help="Task ID")],
+    text: Annotated[str | None, Parameter(name="--text", help="Comment text to post")] = None,
+    notify_all: Annotated[bool, Parameter(name="--notify-all", help="Notify all task watchers")] = False,
+) -> None:
+    """Post a comment on a task.
+
+    Provide text via --text or pipe from stdin.
+
+    Args:
+        task_id: ClickUp task ID.
+        text: Comment text to post.
+        notify_all: If True, notify all task watchers.
+    """
+    if text is None:
+        if not sys.stdin.isatty():
+            text = sys.stdin.read().strip()
+        if not text:
+            raise ClickupyError("No comment text provided. Use --text or pipe from stdin.")
+
+    environ = init_environ()
+    token = environ.get("TOKEN")
+    if not token:
+        raise TokenError()
+
+    clickup = ClickUp(token)
+
+    # The comment endpoint is v2-only; pyclickup uses v1, so we call v2 directly.
+    response = requests.post(
+        f"https://api.clickup.com/api/v2/task/{task_id}/comment",
+        headers=clickup.headers,
+        json={"comment_text": text, "notify_all": notify_all},
+    )
+
+    if not response.ok:
+        try:
+            err_data = response.json()
+            err_msg = err_data.get("err", response.text)
+        except Exception:
+            err_msg = response.text or f"HTTP {response.status_code}"
+        raise ClickupyError(f"Failed to post comment: {err_msg}")
+
+    render_comment_posted(task_id, text)
 
 
 @app.command
