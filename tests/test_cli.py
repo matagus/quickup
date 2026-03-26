@@ -1,5 +1,6 @@
 """Tests for QuickUp! CLI module."""
 
+import sys
 from unittest.mock import Mock, patch
 
 import pytest
@@ -19,8 +20,6 @@ class TestApp:
 
     def test_app_help(self, capsys, monkeypatch):
         """Test that --help works."""
-        import sys
-
         monkeypatch.setattr(sys, "exit", lambda x: None)
         app(["--help"])
         captured = capsys.readouterr()
@@ -433,8 +432,6 @@ class TestUpdateTask:
         capsys,
     ):
         """Test update_task raises error when task not found."""
-        from quickup.cli.exceptions import ClickupyError
-
         mock_environ.return_value = {"TOKEN": "test-token"}
         mock_clickup = Mock()
         mock_clickup_class.return_value = mock_clickup
@@ -443,8 +440,6 @@ class TestUpdateTask:
         mock_clickup.teams = [mock_team]
         mock_get_teams_data.return_value = [mock_team]
         mock_clickup._get_all_tasks.return_value = []
-
-        import pytest
 
         with pytest.raises(ClickupyError, match="Task .* not found"):
             update_task(task_id="nonexistent", status="Done")
@@ -523,8 +518,6 @@ class TestShowTask:
         capsys,
     ):
         """Test show_task raises error when task not found."""
-        from quickup.cli.exceptions import ClickupyError
-
         mock_environ.return_value = {"TOKEN": "test-token"}
         mock_clickup = Mock()
         mock_clickup_class.return_value = mock_clickup
@@ -533,8 +526,6 @@ class TestShowTask:
         mock_clickup.teams = [mock_team]
         mock_get_teams_data.return_value = [mock_team]
         mock_clickup._get_all_tasks.return_value = []
-
-        import pytest
 
         with pytest.raises(ClickupyError, match="Task .* not found"):
             show_task(task_id="nonexistent")

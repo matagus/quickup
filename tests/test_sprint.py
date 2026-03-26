@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from quickup.cli.api_client import get_current_sprint_list
+from quickup.cli.exceptions import ListNotFoundError
 
 
 class TestGetCurrentSprintList:
@@ -133,7 +134,7 @@ class TestGetCurrentSprintList:
         mock_team = Mock()
         mock_team.spaces = [mock_space]
 
-        with pytest.raises(Exception):  # ListNotFoundError
+        with pytest.raises(ListNotFoundError):
             get_current_sprint_list(mock_team, mock_space)
 
     def test_case_insensitive_search(self):

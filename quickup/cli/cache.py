@@ -10,6 +10,10 @@ import pickle
 import sqlite3
 import time
 
+from colorist import Effect
+from pyclickup import ClickUp
+from pyclickup.models import Task
+
 # Cache location: ~/.quickup/cache/
 CACHE_DIR = Path.home() / ".quickup" / "cache"
 CACHE_FILE = CACHE_DIR / "quickup_cache.db"
@@ -233,8 +237,6 @@ def get_task_data(clickup, team_id: str, task_id: str):
     Returns:
         Task object, or None if not found.
     """
-    from pyclickup.models import Task
-
     cache = get_cache()
     cache_key = f"task:{task_id}"
 
@@ -282,9 +284,6 @@ def maybe_warmup(token: str) -> None:
 
     # Clear everything — hierarchy will be lazily re-fetched from API on next use
     cache.clear()
-
-    from colorist import Effect
-    from pyclickup import ClickUp
 
     clickup = ClickUp(token)
     teams = {t.id: t for t in get_teams_data(clickup)}

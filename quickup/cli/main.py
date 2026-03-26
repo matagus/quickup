@@ -6,9 +6,9 @@ from cyclopts import App, Parameter
 from pyclickup import ClickUp
 
 from .api_client import get_current_sprint_list, get_list_for, get_project_for, get_space_for, get_team
-from .cache import get_task_data
+from .cache import get_task_data, maybe_warmup
 from .config import init_environ
-from .exceptions import TokenError, handle_exception
+from .exceptions import ClickupyError, TokenError, handle_exception
 from .renderer import render_list, render_task_detail, render_task_update
 
 app = App(name="quickup", help="A simple and beautiful console-based client for ClickUp.")
@@ -90,9 +90,6 @@ def list_tasks(
 
 def run_app():
     """Run the QuickUp! CLI application."""
-    from .cache import maybe_warmup
-    from .exceptions import ClickupyError
-
     environ = init_environ()
     token = environ.get("TOKEN")
     if token:
@@ -208,15 +205,10 @@ def show_task(
 
     team_obj = get_team(clickup, argv, interactive=interactive)
 
-    if team_obj is None:
-        team_id = cast(str, clickup.teams[0].id)
-    else:
-        team_id = team_obj.id
+    team_id = cast(str, clickup.teams[0].id) if team_obj is None else team_obj.id
 
     task = get_task_data(clickup, team_id, task_id)
     if task is None:
-        from .exceptions import ClickupyError
-
         raise ClickupyError(f"Task {task_id} not found")
 
     render_task_detail(task)
@@ -255,17 +247,12 @@ def update_task(
     team_obj = get_team(clickup, argv, interactive=interactive)
 
     # Fall back to first team if get_team returns None
-    if team_obj is None:
-        team_id = clickup.teams[0].id
-    else:
-        team_id = team_obj.id
+    team_id = clickup.teams[0].id if team_obj is None else team_obj.id
 
     # Get current task to find old status - fetch all tasks and find the matching one
     all_tasks = clickup._get_all_tasks(cast(str, team_id))
     task = next((t for t in all_tasks if t.id == task_id), None)
     if task is None:
-        from .exceptions import ClickupyError
-
         raise ClickupyError(f"Task {task_id} not found")
     old_status = task.status.status  # type: ignore[attr-defined]
 

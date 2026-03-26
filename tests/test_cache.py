@@ -1,6 +1,7 @@
 """Tests for QuickUp! cache module."""
 
 from pathlib import Path
+import shutil
 from unittest.mock import Mock, patch
 
 from quickup.cli.cache import (
@@ -29,8 +30,6 @@ class TestGetCache:
 
     def test_get_cache_creates_directory(self, tmp_path):
         """Test that get_cache creates the cache directory."""
-        import shutil
-
         cache_dir = Path.home() / ".quickup" / "cache"
         backup_path = tmp_path / "quickup_cache_backup"
 
@@ -310,7 +309,7 @@ class TestGetTaskData:
         assert result is mock_task
         mock_cache.set.assert_called_once_with("task:task-abc", mock_task, expire=TASKS_TTL)
 
-    @patch("pyclickup.models.Task")
+    @patch("quickup.cli.cache.Task")
     @patch("quickup.cli.cache.find_task_in_cache")
     @patch("quickup.cli.cache.get_cache")
     def test_cache_miss_fetches_from_api(self, mock_get_cache, mock_find, mock_task_class):

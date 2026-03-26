@@ -255,8 +255,6 @@ def render_list(
 
 def _render_subtasks(subtasks):
     """Render subtasks (raw dicts from single-task API) grouped by status, same format as list view."""
-    from collections import defaultdict
-
     by_status = defaultdict(list)
     status_color = {}
     status_order = {}
@@ -325,10 +323,7 @@ def render_task_detail(task):
 
     # Due Date
     if task.due_date:
-        if isinstance(task.due_date, str):
-            due_date = task.due_date.split("T")[0]
-        else:
-            due_date = task.due_date.strftime("%Y-%m-%d")
+        due_date = task.due_date.split("T")[0] if isinstance(task.due_date, str) else task.due_date.strftime("%Y-%m-%d")
         print(f"{Effect.BOLD}Due Date:{Effect.BOLD_OFF} {due_date}")
     else:
         print(f"{Effect.BOLD}Due Date:{Effect.BOLD_OFF} None")
@@ -359,6 +354,7 @@ def render_task_update(task_id, old_status, new_status):
     print(f"{'─' * 40}")
     print(f"\n{Effect.BOLD}Task ID:{Effect.BOLD_OFF} {task_id}")
     print(
-        f"{Effect.BOLD}Status:{Effect.BOLD_OFF} {Color.YELLOW}{old_status}{Color.OFF} → {Color.GREEN}{new_status}{Color.OFF}"
+        f"{Effect.BOLD}Status:{Effect.BOLD_OFF} "
+        f"{Color.YELLOW}{old_status}{Color.OFF} → {Color.GREEN}{new_status}{Color.OFF}"
     )
     print(f"\n{Color.GREEN}✓{Color.OFF} Status updated successfully")
