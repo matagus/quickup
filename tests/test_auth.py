@@ -2,6 +2,7 @@
 
 from io import BytesIO
 import json
+import sys
 from typing import cast
 from unittest.mock import Mock, patch
 
@@ -70,6 +71,7 @@ class TestTokenStorage:
         monkeypatch.setattr("quickup.cli.auth.AUTH_FILE", tmp_path / "nonexistent.json")
         assert delete_oauth_token() is False
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows does not support Unix file permissions")
     def test_save_token_file_permissions(self, tmp_path, monkeypatch):
         auth_file = tmp_path / "auth.json"
         monkeypatch.setattr("quickup.cli.auth.AUTH_FILE", auth_file)
