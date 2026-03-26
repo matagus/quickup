@@ -1,5 +1,6 @@
 """API client wrapper for ClickUp API interactions."""
 
+from datetime import datetime, timezone
 import sys
 
 from colorist import Color
@@ -261,10 +262,19 @@ def get_current_sprint_list(team, space):
     if not sprint_lists:
         raise ListNotFoundError(hint="No lists found with 'sprint' or 'iteration' in the name")
 
-    # Prefer the sprint explicitly marked as started (currently active)
-    active_sprints = [li for li in sprint_lists if getattr(li, "status", None) == "started"]
-    if active_sprints:
-        return active_sprints[0]
+    # Prefer the sprint whose date range includes today
+    now = datetime.now(timezone.utc)
+    for li in sprint_lists:
+        try:
+            start = getattr(li, "start_date", None)
+            due = getattr(li, "due_date", None)
+            if start and due:
+                start_dt = datetime.fromtimestamp(int(start) / 1000, tz=timezone.utc)
+                due_dt = datetime.fromtimestamp(int(due) / 1000, tz=timezone.utc)
+                if start_dt <= now <= due_dt:
+                    return li
+        except (TypeError, ValueError):
+            continue
 
     # Fallback: sort by ID descending (most recent first)
     sprint_lists.sort(key=lambda x: x.id, reverse=True)
