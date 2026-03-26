@@ -253,6 +253,40 @@ def render_list(
     print(f"{Effect.DIM}Run again: {suggestion}{Effect.DIM_OFF}")
 
 
+def _render_subtasks(subtasks):
+    """Render subtasks (raw dicts from single-task API) grouped by status, same format as list view."""
+    from collections import defaultdict
+
+    by_status = defaultdict(list)
+    status_color = {}
+    status_order = {}
+    for subtask in subtasks:
+        status = subtask.get("status", {})
+        status_name = status.get("status", "unknown")
+        by_status[status_name].append(subtask)
+        status_color[status_name] = status.get("color", "#888888")
+        status_order[status_name] = status.get("orderindex", 0)
+
+    for status_name in sorted(by_status, key=lambda s: status_order[s]):
+        bg = BgColorHex(status_color[status_name])
+        print(f"\n{bg} {status_name.upper()} {bg.OFF} \n")
+        for subtask in by_status[status_name]:
+            task_id = subtask["id"]
+            name = f"{Effect.BOLD}{subtask['name']}{Effect.BOLD_OFF}"
+            url = f"https://app.clickup.com/t/{task_id}"
+            url_str = f"{Color.BLUE}{Effect.UNDERLINE}{url}{Effect.UNDERLINE_OFF}{Color.OFF}"
+            assignees = subtask.get("assignees", [])
+            assignee_names = ", ".join(a.get("username", "") for a in assignees)
+            assignee_str = f"{Effect.DIM}({assignee_names}){Effect.DIM_OFF}" if assignee_names else ""
+            id_str = f"{Effect.DIM}[id={task_id}]{Effect.DIM_OFF}"
+            priority = subtask.get("priority")
+            priority_str = ""
+            if priority and isinstance(priority, dict) and priority.get("priority"):
+                pc = ColorHex(priority["color"])
+                priority_str = f"[{pc}{priority['priority'].capitalize()}{pc.OFF}] "
+            print(f" ▫ {priority_str}{name}: {url_str} {assignee_str} {id_str}")
+
+
 def render_task_detail(task):
     """Render detailed task information.
 
@@ -271,9 +305,8 @@ def render_task_detail(task):
     print(f"{Effect.BOLD}Status:{Effect.BOLD_OFF} {status_color}{task.status.status}{status_color.OFF}")
 
     # URL
-    print(
-        f"{Effect.BOLD}URL:{Effect.BOLD_OFF} {Color.BLUE}{Effect.UNDERLINE}{task.url}{Effect.UNDERLINE_OFF}{Color.OFF}"
-    )
+    url = getattr(task, "url", None) or f"https://app.clickup.com/t/{task.id}"
+    print(f"{Effect.BOLD}URL:{Effect.BOLD_OFF} {Color.BLUE}{Effect.UNDERLINE}{url}{Effect.UNDERLINE_OFF}{Color.OFF}")
 
     # Assignees
     if task.assignees:
@@ -292,21 +325,24 @@ def render_task_detail(task):
 
     # Due Date
     if task.due_date:
-        due_date = task.due_date.split("T")[0]
+        if isinstance(task.due_date, str):
+            due_date = task.due_date.split("T")[0]
+        else:
+            due_date = task.due_date.strftime("%Y-%m-%d")
         print(f"{Effect.BOLD}Due Date:{Effect.BOLD_OFF} {due_date}")
     else:
         print(f"{Effect.BOLD}Due Date:{Effect.BOLD_OFF} None")
 
-    # Description
-    if task.description:
+    # Description (team endpoint uses 'description'; single-task endpoint uses 'text_content')
+    description = getattr(task, "description", None) or getattr(task, "text_content", None)
+    if description:
         print(f"\n{Effect.BOLD}Description:{Effect.BOLD_OFF}")
-        print(f"{task.description}")
+        print(f"{description}")
 
     # Subtasks
     if hasattr(task, "subtasks") and task.subtasks:
         print(f"\n{Effect.BOLD}Subtasks ({len(task.subtasks)}):{Effect.BOLD_OFF}")
-        for subtask in task.subtasks:
-            print(f"  - {subtask.name}")
+        _render_subtasks(task.subtasks)
     else:
         print(f"\n{Effect.BOLD}Subtasks:{Effect.BOLD_OFF} None")
 

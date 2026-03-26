@@ -310,22 +310,24 @@ class TestGetTaskData:
         assert result is mock_task
         mock_cache.set.assert_called_once_with("task:task-abc", mock_task, expire=TASKS_TTL)
 
+    @patch("pyclickup.models.Task")
     @patch("quickup.cli.cache.find_task_in_cache")
     @patch("quickup.cli.cache.get_cache")
-    def test_cache_miss_fetches_from_api(self, mock_get_cache, mock_find):
-        """Test falls back to API and caches the result."""
-        mock_task = Mock(id="task-abc")
+    def test_cache_miss_fetches_from_api(self, mock_get_cache, mock_find, mock_task_class):
+        """Test falls back to single-task API endpoint and caches the result."""
         mock_find.return_value = None
         mock_cache = Mock()
         mock_get_cache.return_value = mock_cache
 
         mock_clickup = Mock()
-        mock_clickup._get_all_tasks.return_value = [Mock(id="task-xyz"), mock_task]
+        mock_clickup.get.return_value = {"id": "task-abc", "name": "Test Task"}
+        mock_task = Mock(id="task-abc")
+        mock_task_class.return_value = mock_task
 
         result = get_task_data(mock_clickup, "team-123", "task-abc")
 
         assert result is mock_task
-        mock_clickup._get_all_tasks.assert_called_once_with("team-123")
+        mock_clickup.get.assert_called_once_with("task/task-abc?include_subtasks=true")
         mock_cache.set.assert_called_once_with("task:task-abc", mock_task, expire=TASKS_TTL)
 
     @patch("quickup.cli.cache.find_task_in_cache")
@@ -337,7 +339,7 @@ class TestGetTaskData:
         mock_get_cache.return_value = mock_cache
 
         mock_clickup = Mock()
-        mock_clickup._get_all_tasks.return_value = [Mock(id="task-xyz")]
+        mock_clickup.get.return_value = {"err": "Task not found"}
 
         result = get_task_data(mock_clickup, "team-123", "task-abc")
 

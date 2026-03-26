@@ -222,7 +222,8 @@ def get_task_data(clickup, team_id: str, task_id: str):
     """Get a single task from cache or fetch from API.
 
     Checks the per-task cache key first, then searches cached list entries,
-    then falls back to the API. Always caches the result under 'task:{task_id}'.
+    then falls back to fetching the task directly via the single-task endpoint
+    (which includes subtasks). Always caches the result under 'task:{task_id}'.
 
     Args:
         clickup: ClickUp client instance.
@@ -232,6 +233,8 @@ def get_task_data(clickup, team_id: str, task_id: str):
     Returns:
         Task object, or None if not found.
     """
+    from pyclickup.models import Task
+
     cache = get_cache()
     cache_key = f"task:{task_id}"
 
@@ -240,11 +243,12 @@ def get_task_data(clickup, team_id: str, task_id: str):
         cache.set(cache_key, task, expire=TASKS_TTL)
         return task
 
-    all_tasks = clickup._get_all_tasks(team_id)
-    task = next((t for t in all_tasks if t.id == task_id), None)
-    if task is not None:
+    task_data = clickup.get(f"task/{task_id}?include_subtasks=true")
+    if isinstance(task_data, dict) and "id" in task_data:
+        task = Task(task_data, client=clickup)
         cache.set(cache_key, task, expire=TASKS_TTL)
-    return task
+        return task
+    return None
 
 
 def force_refresh_tasks(team, list_id: str) -> list:
