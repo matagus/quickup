@@ -12,7 +12,7 @@ from .auth import delete_oauth_token, perform_oauth_login, save_oauth_token
 from .cache import get_task_data, maybe_warmup
 from .config import init_environ
 from .exceptions import ClickupyError, OAuthError, TokenError, handle_exception
-from .renderer import render_comment_posted, render_list, render_task_detail, render_task_update
+from .renderer import render_comment_posted, render_list, render_task_comments, render_task_detail, render_task_update
 
 app = App(name="quickup", help="A simple and beautiful console-based client for ClickUp.")
 
@@ -183,6 +183,7 @@ def show_task(
     task_id: Annotated[str, Parameter(name="task_id", help="Task ID")],
     team: Annotated[str | None, Parameter(name="--team", help="Team ID")] = None,
     interactive: Annotated[bool, Parameter(name="-i", help="Enable interactive mode")] = False,
+    comments: Annotated[bool, Parameter(name="--comments", help="Show task comments")] = False,
 ) -> None:
     """Show detailed information about a specific task.
 
@@ -193,6 +194,7 @@ def show_task(
         task_id: ClickUp task ID.
         team: Optional team ID (required if multiple teams exist).
         interactive: Enable interactive team selection.
+        comments: If True, also fetch and display task comments.
     """
     environ = init_environ()
     token = environ.get("TOKEN")
@@ -215,6 +217,20 @@ def show_task(
         raise ClickupyError(f"Task {task_id} not found")
 
     render_task_detail(task)
+
+    if comments:
+        response = requests.get(
+            f"https://api.clickup.com/api/v2/task/{task_id}/comment",
+            headers=clickup.headers,
+        )
+        if not response.ok:
+            try:
+                err_data = response.json()
+                err_msg = err_data.get("err", response.text)
+            except Exception:
+                err_msg = response.text or f"HTTP {response.status_code}"
+            raise ClickupyError(f"Failed to fetch comments: {err_msg}")
+        render_task_comments(response.json().get("comments", []))
 
 
 @app.command(name="update")

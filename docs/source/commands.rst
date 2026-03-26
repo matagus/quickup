@@ -212,6 +212,10 @@ Options
 
    Team ID (required if multiple teams exist)
 
+.. option:: --comments
+
+   Fetch and display task comments
+
 .. option:: -i, --interactive
 
    Enable interactive mode
@@ -230,6 +234,12 @@ With team specification:
 .. code-block:: bash
 
    quickup task 123456 --team 12345
+
+Include comments:
+
+.. code-block:: bash
+
+   quickup task 123456 --comments
 
 ``quickup update`` - Update Task Status
 ---------------------------------------

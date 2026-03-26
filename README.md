@@ -149,11 +149,15 @@ quickup task <task_id>
 
 # With team specification
 quickup task <task_id> --team <team_id>
+
+# Include task comments
+quickup task <task_id> --comments
 ```
 
 **Options:**
 - `task_id`: ClickUp task ID
 - `--team`: Team ID (required if multiple teams exist)
+- `--comments`: Fetch and display task comments
 - `-i, --interactive`: Enable interactive mode
 
 ### `quickup update <task_id>` - Update Task Status

@@ -112,7 +112,7 @@ align-items: center; height: 100vh; margin: 0; background: #f5f5f5;">
 <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px;
 box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 <h2>{'✅' if status == 200 else '❌'} {message}</h2>
-</div></body></html>l>"""
+</div></body></html>l>l>l>"""
         self.wfile.write(html.encode())
 
     def log_message(self, format: str, *args: object) -> None:

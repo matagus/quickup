@@ -108,6 +108,14 @@ Post comments on tasks directly from the CLI or by piping text from stdin:
 
 Long comments are truncated in the confirmation output for readability.
 
+View all comments on a task with the ``--comments`` flag on the ``task`` command:
+
+.. code-block:: bash
+
+   quickup task 123456 --comments
+
+Each comment shows the author's username, timestamp, and full comment text.
+
 Sprint Detection
 ----------------
 

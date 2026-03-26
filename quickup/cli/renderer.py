@@ -360,6 +360,29 @@ def render_task_update(task_id, old_status, new_status):
     print(f"\n{Color.GREEN}✓{Color.OFF} Status updated successfully")
 
 
+def render_task_comments(comments):
+    """Render list of comments for a task.
+
+    Args:
+        comments: List of comment dicts from the ClickUp API.
+    """
+    print(f"\n{Effect.BOLD}{Color.YELLOW}Comments ({len(comments)}){Color.OFF}{Effect.BOLD_OFF}")
+    print(f"{'─' * 40}")
+
+    if not comments:
+        print("\nNo comments")
+        return
+
+    for comment in comments:
+        user = comment.get("user", {})
+        username = user.get("username") or user.get("email") or "Unknown"
+        date_ms = comment.get("date")
+        date_str = datetime.fromtimestamp(int(date_ms) / 1000).strftime("%Y-%m-%d %H:%M") if date_ms else "Unknown date"
+        text = comment.get("comment_text", "")
+        print(f"\n{Effect.BOLD}{username}{Effect.BOLD_OFF} · {date_str}")
+        print(f"{text}")
+
+
 def render_comment_posted(task_id, comment_text):
     """Render comment posted confirmation.
 
