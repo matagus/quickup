@@ -11,7 +11,13 @@ Problem: Token not found
 
 Error message: ``Token error``
 
-Solution: Ensure your ClickUp API token is set correctly:
+Solution: Authenticate using the login command (recommended):
+
+.. code-block:: bash
+
+   quickup login
+
+Alternatively, set your ClickUp API token manually:
 
 .. code-block:: bash
 
@@ -23,7 +29,7 @@ Or create a ``.env`` file:
 
    CLICKUP_TOKEN=your_token_here
 
-Verify the token is loaded:
+Verify the environment token is loaded:
 
 .. code-block:: bash
 

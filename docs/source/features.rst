@@ -3,6 +3,32 @@ Features
 
 This page describes the key features of QuickUp!.
 
+Authentication
+--------------
+
+QuickUp! supports two authentication modes:
+
+**OAuth (recommended)** — authenticate once via your browser:
+
+.. code-block:: bash
+
+   quickup login   # opens browser, saves token to ~/.quickup/auth.json
+   quickup logout  # removes the stored token
+
+**API Token** — set a personal token via environment variable or ``.env`` file:
+
+.. code-block:: bash
+
+   export CLICKUP_TOKEN=your_token_here
+
+Token resolution order:
+
+1. ``CLICKUP_TOKEN`` environment variable or ``.env`` file (takes precedence)
+2. OAuth token stored in ``~/.quickup/auth.json``
+
+The OAuth token is stored with restrictive file permissions (``0o600``) so only the
+current user can read it.
+
 Task Listing
 ------------
 

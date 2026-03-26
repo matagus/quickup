@@ -32,7 +32,15 @@ pip install quickup
 
 ## Quick Start
 
-Set your ClickUp API token:
+Authenticate with ClickUp (recommended):
+
+```bash
+quickup login
+```
+
+This opens your browser for OAuth authentication and saves your credentials to `~/.quickup/auth.json`.
+
+Alternatively, set your ClickUp API token directly (useful for CI/automation):
 
 ```bash
 export CLICKUP_TOKEN=your_token_here
@@ -51,6 +59,26 @@ quickup --team <team_id> --list <list_id>
 ```
 
 ## Commands
+
+### `quickup login` - Authenticate
+
+Authenticate with ClickUp via OAuth. Opens your default browser and waits for the callback (up to 120 seconds).
+
+```bash
+quickup login
+```
+
+Credentials are saved to `~/.quickup/auth.json` (permissions: `0o600`).
+
+### `quickup logout` - Remove Stored Credentials
+
+Remove the stored OAuth token.
+
+```bash
+quickup logout
+```
+
+This only removes the OAuth token — it does not affect tokens set via `CLICKUP_TOKEN` or `.env`.
 
 ### `quickup` (default) - List Tasks
 

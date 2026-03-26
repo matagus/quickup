@@ -32,12 +32,31 @@ Installation Steps
 Configuration
 -------------
 
-After installation, you need to configure your ClickUp API token.
+After installation, authenticate with ClickUp using one of the methods below.
 
-Option 1: Environment Variable
+Option 1: OAuth Login (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the login command to authenticate via your browser:
+
+.. code-block:: bash
+
+   quickup login
+
+This opens ClickUp in your default browser. After approving access, your credentials are
+saved automatically to ``~/.quickup/auth.json`` (permissions: ``0o600``). No manual token
+management needed.
+
+To sign out:
+
+.. code-block:: bash
+
+   quickup logout
+
+Option 2: Environment Variable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Export the token in your shell:
+For automation or CI environments, export the token in your shell:
 
 .. code-block:: bash
 
@@ -49,7 +68,7 @@ To make this permanent, add it to your shell configuration file (e.g., ``~/.bash
 
    echo 'export CLICKUP_TOKEN=your_token_here' >> ~/.zshrc
 
-Option 2: .env File
+Option 3: .env File
 ~~~~~~~~~~~~~~~~~~~
 
 Create a ``.env`` file in your project directory:
@@ -60,8 +79,13 @@ Create a ``.env`` file in your project directory:
 
 QuickUp! will automatically load the token from this file.
 
-Getting Your ClickUp API Token
-------------------------------
+.. note::
+
+   When both an environment/``.env`` token and an OAuth token exist, the environment token
+   takes precedence.
+
+Getting Your ClickUp API Token (for manual setup)
+--------------------------------------------------
 
 1. Log in to your ClickUp account
 2. Go to Settings → Apps → ClickUp API

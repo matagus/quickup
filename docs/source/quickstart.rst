@@ -12,20 +12,23 @@ Install QuickUp! using pip:
 
    pip install quickup
 
-Configuration
--------------
+Authentication
+--------------
 
-Set your ClickUp API token as an environment variable:
+Log in with ClickUp via your browser:
+
+.. code-block:: bash
+
+   quickup login
+
+This opens ClickUp in your browser. After approving access, your credentials are saved
+automatically — no manual token setup needed.
+
+For CI or automation environments, you can instead set an API token directly:
 
 .. code-block:: bash
 
    export CLICKUP_TOKEN=your_token_here
-
-Alternatively, create a ``.env`` file in your project directory:
-
-.. code-block:: bash
-
-   CLICKUP_TOKEN=your_token_here
 
 Basic Usage
 -----------

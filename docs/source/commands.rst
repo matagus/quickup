@@ -3,6 +3,63 @@ Commands Reference
 
 This page documents all available QuickUp! CLI commands and their options.
 
+``quickup login`` - Authenticate
+---------------------------------
+
+Authenticate with ClickUp via OAuth. Opens your default browser and waits for the callback.
+
+Synopsis
+~~~~~~~~
+
+.. code-block:: bash
+
+   quickup login
+
+Description
+~~~~~~~~~~~
+
+Opens the ClickUp authorization page in your browser and starts a local HTTP server on
+``localhost:4242`` to receive the OAuth callback. After you approve access in the browser,
+the token is exchanged and saved securely to ``~/.quickup/auth.json`` (permissions:
+``0o600``). The callback times out after 120 seconds if not completed.
+
+To use a custom OAuth application, set ``QUICKUP_CLIENT_ID`` and ``QUICKUP_CLIENT_SECRET``
+environment variables before running ``quickup login``.
+
+Examples
+~~~~~~~~
+
+Log in with the default QuickUp! OAuth application:
+
+.. code-block:: bash
+
+   quickup login
+
+``quickup logout`` - Remove Stored Credentials
+-----------------------------------------------
+
+Remove the stored OAuth token from disk.
+
+Synopsis
+~~~~~~~~
+
+.. code-block:: bash
+
+   quickup logout
+
+Description
+~~~~~~~~~~~
+
+Deletes ``~/.quickup/auth.json``. This only removes the OAuth token — tokens set via the
+``CLICKUP_TOKEN`` environment variable or a ``.env`` file are not affected.
+
+Examples
+~~~~~~~~
+
+.. code-block:: bash
+
+   quickup logout
+
 ``quickup`` (default) - List Tasks
 ----------------------------------
 

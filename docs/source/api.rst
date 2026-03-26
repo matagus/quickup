@@ -38,6 +38,13 @@ cli.cache
    :members:
    :undoc-members:
 
+cli.auth
+--------
+
+.. automodule:: quickup.cli.auth
+   :members:
+   :undoc-members:
+
 cli.exceptions
 --------------
 

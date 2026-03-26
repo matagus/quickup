@@ -6,9 +6,10 @@ from cyclopts import App, Parameter
 from pyclickup import ClickUp
 
 from .api_client import get_current_sprint_list, get_list_for, get_project_for, get_space_for, get_team
+from .auth import delete_oauth_token, perform_oauth_login, save_oauth_token
 from .cache import get_task_data, maybe_warmup
 from .config import init_environ
-from .exceptions import ClickupyError, TokenError, handle_exception
+from .exceptions import ClickupyError, OAuthError, TokenError, handle_exception
 from .renderer import render_list, render_task_detail, render_task_update
 
 app = App(name="quickup", help="A simple and beautiful console-based client for ClickUp.")
@@ -260,3 +261,26 @@ def update_task(
     task.update(status=status)
 
     render_task_update(task_id, old_status, status)
+
+
+@app.command
+def login() -> None:
+    """Authenticate with ClickUp via OAuth2 browser login."""
+    print("Opening browser for ClickUp authentication...")
+    try:
+        access_token, user_info = perform_oauth_login()
+        save_oauth_token(access_token, user_info)
+        username = user_info.get("username", "unknown")
+        email = user_info.get("email", "")
+        print(f"Successfully logged in as {username} ({email})")
+    except Exception as e:
+        raise OAuthError(str(e)) from e
+
+
+@app.command
+def logout() -> None:
+    """Remove stored ClickUp OAuth credentials."""
+    if delete_oauth_token():
+        print("Logged out successfully. OAuth token removed.")
+    else:
+        print("No OAuth token found. Nothing to do.")
