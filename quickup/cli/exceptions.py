@@ -27,8 +27,8 @@ class TokenError(ClickupyError):
     def __init__(self):
         super().__init__(
             "Invalid or missing ClickUp API token.",
-            "Set CLICKUP_TOKEN in your .env file or environment variables. "
-            "Get your token from ClickUp Settings > Apps > Personal Settings.",
+            "Run 'quickup login' to authenticate via browser, "
+            "or set TOKEN in your .env file with a personal API token.",
         )
 
 
@@ -116,6 +116,15 @@ class ListNotFoundError(ClickupyError):
                 "No lists found for this project.",
                 "Create at least one list in this project or check permissions.",
             )
+
+
+class OAuthError(ClickupyError):
+    """Raised when OAuth authentication fails."""
+
+    exit_code = 6
+
+    def __init__(self, message: str = "OAuth authentication failed."):
+        super().__init__(message, "Try running 'quickup login' again.")
 
 
 class NetworkError(ClickupyError):

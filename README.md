@@ -20,6 +20,7 @@ auto-detect your current sprint. It features interactive mode for easy navigatio
 - **Grouping**: Group tasks by status, assignee, or priority
 - **Task Details**: View detailed information about a specific task
 - **Task Updates**: Update task status with confirmation display
+- **Task Comments**: Post comments on tasks from the CLI or via piped input
 - **Sprint Detection**: Auto-detect current sprint/iteration lists
 - **Interactive Mode**: Navigate through Team → Space → Project → List hierarchy with prompts
 - **Caching**: Disk-based caching for improved performance (24h for teams/lists, 5min for tasks)
@@ -32,7 +33,15 @@ pip install quickup
 
 ## Quick Start
 
-Set your ClickUp API token:
+Authenticate with ClickUp (recommended):
+
+```bash
+quickup login
+```
+
+This opens your browser for OAuth authentication and saves your credentials to `~/.quickup/auth.json`.
+
+Alternatively, set your ClickUp API token directly (useful for CI/automation):
 
 ```bash
 export CLICKUP_TOKEN=your_token_here
@@ -51,6 +60,26 @@ quickup --team <team_id> --list <list_id>
 ```
 
 ## Commands
+
+### `quickup login` - Authenticate
+
+Authenticate with ClickUp via OAuth. Opens your default browser and waits for the callback (up to 120 seconds).
+
+```bash
+quickup login
+```
+
+Credentials are saved to `~/.quickup/auth.json` (permissions: `0o600`).
+
+### `quickup logout` - Remove Stored Credentials
+
+Remove the stored OAuth token.
+
+```bash
+quickup logout
+```
+
+This only removes the OAuth token — it does not affect tokens set via `CLICKUP_TOKEN` or `.env`.
 
 ### `quickup` (default) - List Tasks
 
@@ -120,11 +149,15 @@ quickup task <task_id>
 
 # With team specification
 quickup task <task_id> --team <team_id>
+
+# Include task comments
+quickup task <task_id> --comments
 ```
 
 **Options:**
 - `task_id`: ClickUp task ID
 - `--team`: Team ID (required if multiple teams exist)
+- `--comments`: Fetch and display task comments
 - `-i, --interactive`: Enable interactive mode
 
 ### `quickup update <task_id>` - Update Task Status
@@ -144,6 +177,26 @@ quickup update <task_id> --status "Done" --team <team_id>
 - `--status`: New status name (e.g., "To Do", "In Progress", "Done")
 - `--team`: Team ID (required if multiple teams exist)
 - `-i, --interactive`: Enable interactive mode
+
+### `quickup comment <task_id>` - Post a Comment
+
+Post a comment on a specific task.
+
+```bash
+# Post a comment
+quickup comment <task_id> --text "This is my comment"
+
+# Notify all task watchers
+quickup comment <task_id> --text "Attention everyone" --notify-all
+
+# Pipe comment from stdin
+echo "Piped comment" | quickup comment <task_id>
+```
+
+**Options:**
+- `task_id`: ClickUp task ID
+- `--text`: Comment text to post (reads from stdin if omitted)
+- `--notify-all`: Notify all task watchers
 
 ## Interactive Mode
 

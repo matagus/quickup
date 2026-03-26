@@ -1,15 +1,18 @@
 """Main CLI entry point for QuickUp! using cyclopts."""
 
+import sys
 from typing import Annotated, cast
 
 from cyclopts import App, Parameter
 from pyclickup import ClickUp
+import requests
 
 from .api_client import get_current_sprint_list, get_list_for, get_project_for, get_space_for, get_team
-from .cache import get_task_data
+from .auth import delete_oauth_token, perform_oauth_login, save_oauth_token
+from .cache import get_task_data, maybe_warmup
 from .config import init_environ
-from .exceptions import TokenError, handle_exception
-from .renderer import render_list, render_task_detail, render_task_update
+from .exceptions import ClickupyError, OAuthError, TokenError, handle_exception
+from .renderer import render_comment_posted, render_list, render_task_comments, render_task_detail, render_task_update
 
 app = App(name="quickup", help="A simple and beautiful console-based client for ClickUp.")
 
@@ -90,9 +93,6 @@ def list_tasks(
 
 def run_app():
     """Run the QuickUp! CLI application."""
-    from .cache import maybe_warmup
-    from .exceptions import ClickupyError
-
     environ = init_environ()
     token = environ.get("TOKEN")
     if token:
@@ -183,6 +183,7 @@ def show_task(
     task_id: Annotated[str, Parameter(name="task_id", help="Task ID")],
     team: Annotated[str | None, Parameter(name="--team", help="Team ID")] = None,
     interactive: Annotated[bool, Parameter(name="-i", help="Enable interactive mode")] = False,
+    comments: Annotated[bool, Parameter(name="--comments", help="Show task comments")] = False,
 ) -> None:
     """Show detailed information about a specific task.
 
@@ -193,6 +194,7 @@ def show_task(
         task_id: ClickUp task ID.
         team: Optional team ID (required if multiple teams exist).
         interactive: Enable interactive team selection.
+        comments: If True, also fetch and display task comments.
     """
     environ = init_environ()
     token = environ.get("TOKEN")
@@ -208,18 +210,27 @@ def show_task(
 
     team_obj = get_team(clickup, argv, interactive=interactive)
 
-    if team_obj is None:
-        team_id = cast(str, clickup.teams[0].id)
-    else:
-        team_id = team_obj.id
+    team_id = cast(str, clickup.teams[0].id) if team_obj is None else team_obj.id
 
     task = get_task_data(clickup, team_id, task_id)
     if task is None:
-        from .exceptions import ClickupyError
-
         raise ClickupyError(f"Task {task_id} not found")
 
     render_task_detail(task)
+
+    if comments:
+        response = requests.get(
+            f"https://api.clickup.com/api/v2/task/{task_id}/comment",
+            headers=clickup.headers,
+        )
+        if not response.ok:
+            try:
+                err_data = response.json()
+                err_msg = err_data.get("err", response.text)
+            except Exception:
+                err_msg = response.text or f"HTTP {response.status_code}"
+            raise ClickupyError(f"Failed to fetch comments: {err_msg}")
+        render_task_comments(response.json().get("comments", []))
 
 
 @app.command(name="update")
@@ -255,17 +266,12 @@ def update_task(
     team_obj = get_team(clickup, argv, interactive=interactive)
 
     # Fall back to first team if get_team returns None
-    if team_obj is None:
-        team_id = clickup.teams[0].id
-    else:
-        team_id = team_obj.id
+    team_id = clickup.teams[0].id if team_obj is None else team_obj.id
 
     # Get current task to find old status - fetch all tasks and find the matching one
     all_tasks = clickup._get_all_tasks(cast(str, team_id))
     task = next((t for t in all_tasks if t.id == task_id), None)
     if task is None:
-        from .exceptions import ClickupyError
-
         raise ClickupyError(f"Task {task_id} not found")
     old_status = task.status.status  # type: ignore[attr-defined]
 
@@ -273,3 +279,72 @@ def update_task(
     task.update(status=status)
 
     render_task_update(task_id, old_status, status)
+
+
+@app.command(name="comment")
+def comment_task(
+    task_id: Annotated[str, Parameter(name="task_id", help="Task ID")],
+    text: Annotated[str | None, Parameter(name="--text", help="Comment text to post")] = None,
+    notify_all: Annotated[bool, Parameter(name="--notify-all", help="Notify all task watchers")] = False,
+) -> None:
+    """Post a comment on a task.
+
+    Provide text via --text or pipe from stdin.
+
+    Args:
+        task_id: ClickUp task ID.
+        text: Comment text to post.
+        notify_all: If True, notify all task watchers.
+    """
+    if text is None:
+        if not sys.stdin.isatty():
+            text = sys.stdin.read().strip()
+        if not text:
+            raise ClickupyError("No comment text provided. Use --text or pipe from stdin.")
+
+    environ = init_environ()
+    token = environ.get("TOKEN")
+    if not token:
+        raise TokenError()
+
+    clickup = ClickUp(token)
+
+    # The comment endpoint is v2-only; pyclickup uses v1, so we call v2 directly.
+    response = requests.post(
+        f"https://api.clickup.com/api/v2/task/{task_id}/comment",
+        headers=clickup.headers,
+        json={"comment_text": text, "notify_all": notify_all},
+    )
+
+    if not response.ok:
+        try:
+            err_data = response.json()
+            err_msg = err_data.get("err", response.text)
+        except Exception:
+            err_msg = response.text or f"HTTP {response.status_code}"
+        raise ClickupyError(f"Failed to post comment: {err_msg}")
+
+    render_comment_posted(task_id, text)
+
+
+@app.command
+def login() -> None:
+    """Authenticate with ClickUp via OAuth2 browser login."""
+    print("Opening browser for ClickUp authentication...")
+    try:
+        access_token, user_info = perform_oauth_login()
+        save_oauth_token(access_token, user_info)
+        username = user_info.get("username", "unknown")
+        email = user_info.get("email", "")
+        print(f"Successfully logged in as {username} ({email})")
+    except Exception as e:
+        raise OAuthError(str(e)) from e
+
+
+@app.command
+def logout() -> None:
+    """Remove stored ClickUp OAuth credentials."""
+    if delete_oauth_token():
+        print("Logged out successfully. OAuth token removed.")
+    else:
+        print("No OAuth token found. Nothing to do.")

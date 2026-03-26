@@ -1,5 +1,6 @@
 """API client wrapper for ClickUp API interactions."""
 
+from datetime import datetime, timezone
 import sys
 
 from colorist import Color
@@ -41,7 +42,7 @@ def get_team(clickup, argv, interactive=False):
     except ValueError:
         teams = get_teams_data(clickup)
         if len(teams) == 0:
-            raise TeamNotFoundError()
+            raise TeamNotFoundError() from None
 
         if len(teams) > 1:
             if interactive:
@@ -58,14 +59,14 @@ def get_team(clickup, argv, interactive=False):
                         if f"{t.name} [{t.id}]" == answers["team"]:
                             return t
 
-            raise TeamAmbiguousError([t.name for t in teams])
+            raise TeamAmbiguousError([t.name for t in teams]) from None
 
         return teams[0]
 
     except (TeamNotFoundError, TeamAmbiguousError):
         raise
-    except Exception:
-        raise TeamNotFoundError(team_id=argv[argv.index("--team") + 1] if "--team" in argv else None)
+    except Exception as err:
+        raise TeamNotFoundError(team_id=argv[argv.index("--team") + 1] if "--team" in argv else None) from err
 
 
 def get_space_for(team, argv, interactive=False):
@@ -90,31 +91,30 @@ def get_space_for(team, argv, interactive=False):
     except ValueError:
         spaces = get_spaces_data(team)
         if len(spaces) == 0:
-            raise SpaceNotFoundError()
+            raise SpaceNotFoundError() from None
 
-        if len(spaces) > 1:
-            if interactive:
-                questions = [
-                    inquirer.List(
-                        "space",
-                        message=f"Select a {Color.CYAN}Space{Color.OFF}",
-                        choices=[f"{space.name} [{space.id}]" for space in spaces],
-                    )
-                ]
+        if len(spaces) > 1 and interactive:
+            questions = [
+                inquirer.List(
+                    "space",
+                    message=f"Select a {Color.CYAN}Space{Color.OFF}",
+                    choices=[f"{space.name} [{space.id}]" for space in spaces],
+                )
+            ]
 
-                answers = inquirer.prompt(questions)
+            answers = inquirer.prompt(questions)
 
-                if answers:
-                    for space in spaces:
-                        if f"{space.name} [{space.id}]" == answers["space"]:
-                            return space
+            if answers:
+                for space in spaces:
+                    if f"{space.name} [{space.id}]" == answers["space"]:
+                        return space
 
         return spaces[0]
 
     except SpaceNotFoundError:
         raise
-    except Exception:
-        raise SpaceNotFoundError(space_id=argv[argv.index("--space") + 1] if "--space" in argv else None)
+    except Exception as err:
+        raise SpaceNotFoundError(space_id=argv[argv.index("--space") + 1] if "--space" in argv else None) from err
 
 
 def get_project_for(space, argv, interactive=False):
@@ -139,35 +139,36 @@ def get_project_for(space, argv, interactive=False):
     except ValueError:
         projects = get_projects_data(space)
         if len(projects) == 0:
-            raise ProjectNotFoundError()
+            raise ProjectNotFoundError() from None
 
         visible = [p for p in projects if not getattr(p, "hidden", False)]
         if not visible:
             visible = projects
 
-        if len(visible) > 1:
-            if interactive:
-                questions = [
-                    inquirer.List(
-                        "project",
-                        message=f"Select a {Color.GREEN}Project{Color.OFF}",
-                        choices=[f"{project.name} [{project.id}]" for project in visible],
-                    )
-                ]
+        if len(visible) > 1 and interactive:
+            questions = [
+                inquirer.List(
+                    "project",
+                    message=f"Select a {Color.GREEN}Project{Color.OFF}",
+                    choices=[f"{project.name} [{project.id}]" for project in visible],
+                )
+            ]
 
-                answers = inquirer.prompt(questions)
+            answers = inquirer.prompt(questions)
 
-                if answers:
-                    for project in visible:
-                        if f"{project.name} [{project.id}]" == answers["project"]:
-                            return project
+            if answers:
+                for project in visible:
+                    if f"{project.name} [{project.id}]" == answers["project"]:
+                        return project
 
         return visible[0]
 
     except ProjectNotFoundError:
         raise
-    except Exception:
-        raise ProjectNotFoundError(project_id=argv[argv.index("--project") + 1] if "--project" in argv else None)
+    except Exception as err:
+        raise ProjectNotFoundError(
+            project_id=argv[argv.index("--project") + 1] if "--project" in argv else None
+        ) from err
 
 
 def get_list_for(space_obj, argv, interactive=False):
@@ -204,31 +205,30 @@ def get_list_for(space_obj, argv, interactive=False):
                     lists = lists + get_lists_data(p)
 
         if len(lists) == 0:
-            raise ListNotFoundError()
+            raise ListNotFoundError() from None
 
-        if len(lists) > 1:
-            if interactive:
-                questions = [
-                    inquirer.List(
-                        "list",
-                        message=f"Select a {Color.YELLOW}List{Color.OFF}",
-                        choices=[f"{li.name} [{li.id}]" for li in lists],
-                    )
-                ]
+        if len(lists) > 1 and interactive:
+            questions = [
+                inquirer.List(
+                    "list",
+                    message=f"Select a {Color.YELLOW}List{Color.OFF}",
+                    choices=[f"{li.name} [{li.id}]" for li in lists],
+                )
+            ]
 
-                answers = inquirer.prompt(questions)
+            answers = inquirer.prompt(questions)
 
-                if answers:
-                    for li in lists:
-                        if f"{li.name} [{li.id}]" == answers["list"]:
-                            return li
+            if answers:
+                for li in lists:
+                    if f"{li.name} [{li.id}]" == answers["list"]:
+                        return li
 
         return lists[0]
 
     except ListNotFoundError:
         raise
-    except Exception:
-        raise ListNotFoundError(list_id=argv[argv.index("--list") + 1] if "--list" in argv else None)
+    except Exception as err:
+        raise ListNotFoundError(list_id=argv[argv.index("--list") + 1] if "--list" in argv else None) from err
 
 
 def get_current_sprint_list(team, space):
@@ -261,10 +261,19 @@ def get_current_sprint_list(team, space):
     if not sprint_lists:
         raise ListNotFoundError(hint="No lists found with 'sprint' or 'iteration' in the name")
 
-    # Prefer the sprint explicitly marked as started (currently active)
-    active_sprints = [li for li in sprint_lists if getattr(li, "status", None) == "started"]
-    if active_sprints:
-        return active_sprints[0]
+    # Prefer the sprint whose date range includes today
+    now = datetime.now(timezone.utc)
+    for li in sprint_lists:
+        try:
+            start = getattr(li, "start_date", None)
+            due = getattr(li, "due_date", None)
+            if start and due:
+                start_dt = datetime.fromtimestamp(int(start) / 1000, tz=timezone.utc)
+                due_dt = datetime.fromtimestamp(int(due) / 1000, tz=timezone.utc)
+                if start_dt <= now <= due_dt:
+                    return li
+        except (TypeError, ValueError):
+            continue
 
     # Fallback: sort by ID descending (most recent first)
     sprint_lists.sort(key=lambda x: x.id, reverse=True)

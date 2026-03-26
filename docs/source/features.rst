@@ -3,6 +3,32 @@ Features
 
 This page describes the key features of QuickUp!.
 
+Authentication
+--------------
+
+QuickUp! supports two authentication modes:
+
+**OAuth (recommended)** — authenticate once via your browser:
+
+.. code-block:: bash
+
+   quickup login   # opens browser, saves token to ~/.quickup/auth.json
+   quickup logout  # removes the stored token
+
+**API Token** — set a personal token via environment variable or ``.env`` file:
+
+.. code-block:: bash
+
+   export CLICKUP_TOKEN=your_token_here
+
+Token resolution order:
+
+1. ``CLICKUP_TOKEN`` environment variable or ``.env`` file (takes precedence)
+2. OAuth token stored in ``~/.quickup/auth.json``
+
+The OAuth token is stored with restrictive file permissions (``0o600``) so only the
+current user can read it.
+
 Task Listing
 ------------
 
@@ -63,6 +89,32 @@ Group tasks by different criteria:
 
    # Group by priority
    quickup --team 123 --list 456 --group-by priority
+
+Task Comments
+-------------
+
+Post comments on tasks directly from the CLI or by piping text from stdin:
+
+.. code-block:: bash
+
+   # Post a comment with --text
+   quickup comment 123456 --text "Looks good!"
+
+   # Pipe from another command
+   echo "Automated comment" | quickup comment 123456
+
+   # Notify all task watchers
+   quickup comment 123456 --text "Please review" --notify-all
+
+Long comments are truncated in the confirmation output for readability.
+
+View all comments on a task with the ``--comments`` flag on the ``task`` command:
+
+.. code-block:: bash
+
+   quickup task 123456 --comments
+
+Each comment shows the author's username, timestamp, and full comment text.
 
 Sprint Detection
 ----------------

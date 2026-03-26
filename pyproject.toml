@@ -100,6 +100,13 @@ app = "python quickup.py"
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint]
+fixable = [
+    "ALL",
+]
+unfixable = []
+select = ["E", "F", "UP", "B", "SIM", "PLC0415"]
+
 [tool.black]
 line-length = 120
 

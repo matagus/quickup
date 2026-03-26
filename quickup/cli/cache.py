@@ -10,6 +10,10 @@ import pickle
 import sqlite3
 import time
 
+from colorist import Effect
+from pyclickup import ClickUp
+from pyclickup.models import Task
+
 # Cache location: ~/.quickup/cache/
 CACHE_DIR = Path.home() / ".quickup" / "cache"
 CACHE_FILE = CACHE_DIR / "quickup_cache.db"
@@ -222,7 +226,8 @@ def get_task_data(clickup, team_id: str, task_id: str):
     """Get a single task from cache or fetch from API.
 
     Checks the per-task cache key first, then searches cached list entries,
-    then falls back to the API. Always caches the result under 'task:{task_id}'.
+    then falls back to fetching the task directly via the single-task endpoint
+    (which includes subtasks). Always caches the result under 'task:{task_id}'.
 
     Args:
         clickup: ClickUp client instance.
@@ -240,11 +245,12 @@ def get_task_data(clickup, team_id: str, task_id: str):
         cache.set(cache_key, task, expire=TASKS_TTL)
         return task
 
-    all_tasks = clickup._get_all_tasks(team_id)
-    task = next((t for t in all_tasks if t.id == task_id), None)
-    if task is not None:
+    task_data = clickup.get(f"task/{task_id}?include_subtasks=true")
+    if isinstance(task_data, dict) and "id" in task_data:
+        task = Task(task_data, client=clickup)
         cache.set(cache_key, task, expire=TASKS_TTL)
-    return task
+        return task
+    return None
 
 
 def force_refresh_tasks(team, list_id: str) -> list:
@@ -278,9 +284,6 @@ def maybe_warmup(token: str) -> None:
 
     # Clear everything — hierarchy will be lazily re-fetched from API on next use
     cache.clear()
-
-    from colorist import Effect
-    from pyclickup import ClickUp
 
     clickup = ClickUp(token)
     teams = {t.id: t for t in get_teams_data(clickup)}

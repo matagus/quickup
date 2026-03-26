@@ -82,7 +82,22 @@ class TestRenderTaskDetail:
         mock_task.priority = None
         mock_task.due_date = None
         mock_task.description = None
-        mock_task.subtasks = [Mock(name="Subtask 1"), Mock(name="Subtask 2")]
+        mock_task.subtasks = [
+            {
+                "id": "sub-1",
+                "name": "Subtask 1",
+                "status": {"status": "to do", "color": "#aabbcc", "orderindex": 0},
+                "assignees": [],
+                "priority": None,
+            },
+            {
+                "id": "sub-2",
+                "name": "Subtask 2",
+                "status": {"status": "to do", "color": "#aabbcc", "orderindex": 0},
+                "assignees": [],
+                "priority": None,
+            },
+        ]
 
         render_task_detail(mock_task)
 
