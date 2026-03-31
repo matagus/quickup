@@ -81,7 +81,25 @@ quickup logout
 
 This only removes the OAuth token — it does not affect tokens set via `CLICKUP_TOKEN` or `.env`.
 
-### `quickup` (default) - List Tasks
+### `quickup` (no arguments) - Recent Commands
+
+When run with no arguments, QuickUp! displays the 10 most recent commands you've run:
+
+```bash
+quickup
+```
+
+```
+Recent commands:
+
+   1. 2026-03-28 14:32  quickup sprint --assignee john
+   2. 2026-03-28 10:15  quickup --team 123 --list 456
+   3. 2026-03-27 09:00  quickup task abc123 --comments
+```
+
+Command history is stored at `~/.quickup/history.json` (last 50 entries).
+
+### `quickup [OPTIONS]` - List Tasks
 
 List all tasks from a ClickUp list, grouped by status.
 

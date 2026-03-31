@@ -1,9 +1,11 @@
 """Main CLI entry point for QuickUp! using cyclopts."""
 
+from datetime import datetime
 import sys
 from typing import Annotated, cast
 
 from cyclopts import App, Parameter
+import inquirer
 from pyclickup import ClickUp
 import requests
 
@@ -12,6 +14,7 @@ from .auth import delete_oauth_token, perform_oauth_login, save_oauth_token
 from .cache import get_task_data, maybe_warmup
 from .config import init_environ
 from .exceptions import ClickupyError, OAuthError, TokenError, handle_exception
+from .history import get_recent, record
 from .renderer import render_comment_posted, render_list, render_task_comments, render_task_detail, render_task_update
 
 app = App(name="quickup", help="A simple and beautiful console-based client for ClickUp.")
@@ -91,14 +94,53 @@ def list_tasks(
     )
 
 
+_SUBCOMMANDS = {"sprint", "task", "update", "comment", "login", "logout"}
+
+
+def _pick_and_run_recent() -> None:
+    """Show recent commands via inquirer and re-execute the chosen one."""
+    entries = get_recent(10)
+    if not entries:
+        print("No command history yet. Try running a subcommand first!")
+        return
+
+    choices = []
+    for entry in entries:
+        ts = datetime.fromisoformat(entry["timestamp"]).astimezone()
+        label = f"{ts:%Y-%m-%d %H:%M}  {entry['command']}"
+        choices.append((label, entry["command"]))
+    choices.append(("help", "__help__"))
+    choices.append(("quit", "__quit__"))
+
+    answers = inquirer.prompt([inquirer.List("cmd", message="Select a recent command to run", choices=choices)])
+    if not answers:
+        return
+
+    chosen = answers["cmd"]
+    if chosen == "__quit__":
+        return
+    if chosen == "__help__":
+        sys.argv = ["quickup", "--help"]
+    else:
+        sys.argv = chosen.split()
+    run_app()
+
+
 def run_app():
     """Run the QuickUp! CLI application."""
+    if len(sys.argv) == 1:
+        _pick_and_run_recent()
+        return
+
     environ = init_environ()
     token = environ.get("TOKEN")
     if token:
         maybe_warmup(token)
 
     try:
+        first_arg = sys.argv[1] if len(sys.argv) > 1 else ""
+        if first_arg in _SUBCOMMANDS:
+            record(sys.argv)
         app()
     except ClickupyError as e:
         handle_exception(e)
