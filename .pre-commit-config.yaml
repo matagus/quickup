@@ -84,9 +84,17 @@ repos:
           - "inquirer"
           - "cyclopts"
           - "pytest"
+          # .github/sync_labels.py falls back to tomli under Python 3.10, which
+          # is the interpreter this hook's venv uses in the 3.10 CI matrix job.
+          - "tomli"
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:
       - id: pyupgrade
         args: ["--py312-plus"]
+        # The CI helper scripts must stay runnable on the workflow's interpreter,
+        # which is not necessarily 3.12+. pyupgrade --py312-plus rewrites away
+        # their `sys.version_info` guards (e.g. the tomllib/tomli fallback in
+        # .github/sync_labels.py), so leave them alone.
+        exclude: ^\.github/
