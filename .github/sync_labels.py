@@ -16,10 +16,10 @@ field to label objects (label archiving went GA on 2026-08-27)::
 
 This replacement only uses the Python standard library and reads exactly the
 fields it needs, so additional fields in API responses can never break it
-again. The only exception is TOML parsing on Python 3.10, which has no
-:mod:`tomllib` and falls back to the ``tomli`` backport.
+again. TOML parsing uses the standard library :mod:`tomllib`, available on
+Python 3.11 and newer.
 
-Requires Python 3.10+ (``pip install tomli`` on 3.10 only).
+Requires Python 3.11+.
 
 Usage
 -----
@@ -41,15 +41,11 @@ import os
 from pathlib import Path
 import re
 import sys
+import tomllib
 from typing import Any
 import urllib.error
 import urllib.parse
 import urllib.request
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:  # Python 3.10: tomllib is not in the stdlib yet
-    import tomli as tomllib
 
 API_VERSION = "2022-11-28"
 USER_AGENT = "quickup-label-sync"

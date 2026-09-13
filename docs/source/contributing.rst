@@ -44,7 +44,7 @@ This generates coverage reports in:
 - ``coverage.json`` - JSON format
 - Terminal output - Human-readable summary
 
-Run tests on specific Python versions (3.10-3.14):
+Run tests on specific Python versions (3.11-3.14):
 
 .. code-block:: bash
 

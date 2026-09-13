@@ -1,6 +1,6 @@
 """Tests for QuickUp! sprint command."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -159,7 +159,7 @@ class TestGetCurrentSprintList:
     def test_returns_active_sprint_by_date_range(self):
         """Test returning the sprint whose date range includes today, regardless of ID."""
         mock_space = Mock(id="space-123")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         sprint_past = Mock()
         sprint_past.name = "Sprint 1"
@@ -212,7 +212,7 @@ class TestGetCurrentSprintList:
     def test_falls_back_to_id_sort_when_no_current_sprint(self):
         """Test fallback to ID sort when no sprint's date range includes today."""
         mock_space = Mock(id="space-123")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         sprint_past = Mock()
         sprint_past.name = "Sprint 1"
