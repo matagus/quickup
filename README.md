@@ -1,6 +1,6 @@
 # QuickUp!
 
-![Python Compatibility](https://img.shields.io/badge/python-3.10|3.11|3.12|3.13|3.14-blue.svg)
+![Python Compatibility](https://img.shields.io/badge/python-3.11|3.12|3.13|3.14-blue.svg)
 [![PyPI Version](https://img.shields.io/pypi/v/quickup.svg)](https://pypi.python.org/pypi/quickup)
 [![Tests](https://github.com/matagus/quickup/actions/workflows/tests.yml/badge.svg)](https://github.com/matagus/quickup/actions/workflows/tests.yml)
 [![Documentation Status](https://readthedocs.org/projects/quickup/badge/?version=latest)](https://quickup.readthedocs.io/en/latest/?badge=latest)
@@ -254,7 +254,7 @@ Use `--no-cache` to bypass cache and fetch fresh data from the API.
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - ClickUp API token
 
 ## Dependencies
