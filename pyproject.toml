@@ -36,7 +36,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "pytest", "pytest-mock", "pytest-cov", "coverage"
+  "pytest", "pytest-mock", "pytest-cov", "coverage",
+  # .github/sync_labels.py needs a TOML parser on Python 3.10 (no tomllib)
+  "tomli; python_version < '3.11'",
 ]
 docs = [
   "sphinx>=7.1.2,<8",
