@@ -2,6 +2,7 @@
 
 from io import BytesIO
 import json
+import os
 import sys
 from typing import cast
 from unittest.mock import Mock, patch
@@ -80,6 +81,31 @@ class TestTokenStorage:
         save_oauth_token("secret-token")
         stat = auth_file.stat()
         assert stat.st_mode & 0o777 == 0o600
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows does not support Unix file permissions")
+    def test_save_token_ignores_permissive_umask(self, tmp_path, monkeypatch):
+        auth_file = tmp_path / "auth.json"
+        monkeypatch.setattr("quickup.cli.auth.AUTH_FILE", auth_file)
+        monkeypatch.setattr("quickup.cli.auth.AUTH_DIR", tmp_path)
+
+        previous_umask = os.umask(0o000)
+        try:
+            save_oauth_token("secret-token")
+        finally:
+            os.umask(previous_umask)
+
+        assert auth_file.stat().st_mode & 0o777 == 0o600
+
+    def test_save_token_leaves_no_temp_file(self, tmp_path, monkeypatch):
+        auth_file = tmp_path / "auth.json"
+        monkeypatch.setattr("quickup.cli.auth.AUTH_FILE", auth_file)
+        monkeypatch.setattr("quickup.cli.auth.AUTH_DIR", tmp_path)
+
+        save_oauth_token("token-1")
+        save_oauth_token("token-2")
+
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["auth.json"]
+        assert json.loads(auth_file.read_text())["access_token"] == "token-2"
 
 
 class TestOAuthConfig:

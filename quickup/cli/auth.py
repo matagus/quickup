@@ -50,8 +50,18 @@ def save_oauth_token(token: str, user_info: dict | None = None) -> None:
     if user_info:
         data["user"] = user_info
 
-    AUTH_FILE.write_text(json.dumps(data, indent=2))
-    os.chmod(AUTH_FILE, 0o600)
+    # Write via a 0600 temp file and publish atomically: the token is never
+    # world/group-readable, not even for the instant between create and chmod.
+    tmp_file = AUTH_FILE.with_suffix(AUTH_FILE.suffix + ".tmp")
+    fd = os.open(tmp_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2)
+        os.chmod(tmp_file, 0o600)  # O_CREAT mode is filtered by umask
+        os.replace(tmp_file, AUTH_FILE)
+    except BaseException:
+        tmp_file.unlink(missing_ok=True)
+        raise
 
 
 def delete_oauth_token() -> bool:
