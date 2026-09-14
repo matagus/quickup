@@ -99,84 +99,34 @@ def get_cache() -> SQLiteCache:
     return SQLiteCache(str(CACHE_FILE))
 
 
-def get_teams_data(clickup) -> list:
-    """Get teams data from cache or fetch from API.
-
-    Args:
-        clickup: ClickUp client instance.
-
-    Returns:
-        List of team objects.
-    """
+def _get_cached(cache_key: str, fetch, ttl: int) -> list:
+    """Return cached value for cache_key, or call fetch(), cache, and return it."""
     cache = get_cache()
-    cache_key = "teams"
-
     if cache_key in cache:
         return cache.get(cache_key)  # type: ignore[no-any-return]
+    value = fetch()
+    cache.set(cache_key, value, expire=ttl)
+    return value
 
-    teams = clickup.teams
-    cache.set(cache_key, teams, expire=TEAMS_TTL)
-    return teams
+
+def get_teams_data(clickup) -> list:
+    """Get teams data from cache or fetch from API."""
+    return _get_cached("teams", lambda: clickup.teams, TEAMS_TTL)
 
 
 def get_spaces_data(team) -> list:
-    """Get spaces data for a team from cache or fetch from API.
-
-    Args:
-        team: Team object.
-
-    Returns:
-        List of space objects.
-    """
-    cache = get_cache()
-    cache_key = f"spaces:{team.id}"
-
-    if cache_key in cache:
-        return cache.get(cache_key)  # type: ignore[no-any-return]
-
-    spaces = team.spaces
-    cache.set(cache_key, spaces, expire=SPACES_TTL)
-    return spaces
+    """Get spaces data for a team from cache or fetch from API."""
+    return _get_cached(f"spaces:{team.id}", lambda: team.spaces, SPACES_TTL)
 
 
 def get_projects_data(space) -> list:
-    """Get projects data for a space from cache or fetch from API.
-
-    Args:
-        space: Space object.
-
-    Returns:
-        List of project objects.
-    """
-    cache = get_cache()
-    cache_key = f"projects:{space.id}"
-
-    if cache_key in cache:
-        return cache.get(cache_key)  # type: ignore[no-any-return]
-
-    projects = space.projects
-    cache.set(cache_key, projects, expire=PROJECTS_TTL)
-    return projects
+    """Get projects data for a space from cache or fetch from API."""
+    return _get_cached(f"projects:{space.id}", lambda: space.projects, PROJECTS_TTL)
 
 
 def get_lists_data(project) -> list:
-    """Get lists data for a project from cache or fetch from API.
-
-    Args:
-        project: Project object.
-
-    Returns:
-        List of list objects.
-    """
-    cache = get_cache()
-    cache_key = f"lists:{project.id}"
-
-    if cache_key in cache:
-        return cache.get(cache_key)  # type: ignore[no-any-return]
-
-    lists = project.lists
-    cache.set(cache_key, lists, expire=LISTS_TTL)
-    return lists
+    """Get lists data for a project from cache or fetch from API."""
+    return _get_cached(f"lists:{project.id}", lambda: project.lists, LISTS_TTL)
 
 
 def get_tasks_data(team, list_id: str, include_closed: bool = False) -> list:
