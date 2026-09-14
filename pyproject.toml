@@ -30,18 +30,30 @@ classifiers = [
     "Topic :: Software Development",
 ]
 dependencies = [
-  "python-dotenv", "colorist", "pyclickup", "inquirer", "cyclopts"
+  "python-dotenv>=1.2.3,<2",
+  "colorist>=1.8.15,<2",
+  # pyclickup is unmaintained (0.1.4, last release 2019, classifiers stop at 3.7).
+  # Upper-bound pinned so an unexpected release cannot silently break the client.
+  "pyclickup>=0.1.4,<0.2",
+  "inquirer>=3.4.1,<4",
+  # 5.0 is in beta with breaking changes; stay on the 4.x line.
+  "cyclopts>=4.25.2,<5",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest", "pytest-mock", "pytest-cov", "coverage",
+  "pytest>=9.1.1,<10",
+  "pytest-mock>=3.15.1,<4",
+  "pytest-cov>=7.1.0,<8",
+  "coverage>=7.16.1,<8",
+  "pre-commit>=4.6.2,<5",
 ]
 docs = [
-  "sphinx>=7.1.2,<8",
-  "sphinx_rtd_theme>=2.0.0",
-  "gitpython>=3.1.31",
-  "sphinx-copybutton>=0.5.2",
+  # Sphinx 9.1+ requires Python 3.12; 9.0.x is the last line supporting the 3.11 floor.
+  "sphinx>=9.0.4,<10",
+  "sphinx_rtd_theme>=3.1.0,<4",
+  "gitpython>=3.1.62,<4",
+  "sphinx-copybutton>=0.5.2,<1",
 ]
 
 [project.scripts]
@@ -59,12 +71,12 @@ path = "__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
-    "ipython", "ipdb"
+    "ipython>=9.17.1,<10", "ipdb>=0.13.13,<0.14"
 ]
 
 [tool.hatch.envs.test]
 dependencies = [
-    "pytest", "pytest-mock", "pytest-cov"
+    "pytest>=9.1.1,<10", "pytest-mock>=3.15.1,<4", "pytest-cov>=7.1.0,<8"
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -73,10 +85,10 @@ install = "pip install -e .[dev]"
 
 [tool.hatch.envs.docs]
 dependencies = [
-    "sphinx>=7.1.2,<8",
-    "sphinx_rtd_theme>=2.0.0",
-    "gitpython>=3.1.31",
-    "sphinx-copybutton>=0.5.2",
+    "sphinx>=9.0.4,<10",
+    "sphinx_rtd_theme>=3.1.0,<4",
+    "gitpython>=3.1.62,<4",
+    "sphinx-copybutton>=0.5.2,<1",
 ]
 
 [tool.hatch.envs.docs.scripts]
@@ -84,7 +96,7 @@ build = "sphinx-build -b html docs/source docs/build"
 serve = "python -m http.server 8000 --directory docs/build"
 
 [tool.hatch.envs.debug]
-dependencies = ["ipdb>=0.13.9", "line_profiler>=3.5.1"]
+dependencies = ["ipdb>=0.13.13", "line_profiler>=5.0.2"]
 
 [[tool.hatch.envs.test.matrix]]
 python = ["3.11", "3.12", "3.13", "3.14"]
@@ -97,6 +109,7 @@ cov = ["test-cov", "cov-report"]
 app = "python quickup.py"
 
 [tool.ruff]
+target-version = "py311"
 line-length = 120
 
 [tool.ruff.lint]
