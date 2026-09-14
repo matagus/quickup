@@ -23,16 +23,36 @@ Opens the ClickUp authorization page in your browser and starts a local HTTP ser
 the token is exchanged and saved securely to ``~/.quickup/auth.json`` (permissions:
 ``0o600``). The callback times out after 120 seconds if not completed.
 
-To use a custom OAuth application, set ``QUICKUP_CLIENT_ID`` and ``QUICKUP_CLIENT_SECRET``
-environment variables before running ``quickup login``.
+Prerequisites
+~~~~~~~~~~~~~
+
+QuickUp! ships without any bundled credentials, so you must point it at your own ClickUp
+OAuth app. Create one at https://app.clickup.com/settings/apps with the redirect URI
+``http://localhost:4242``, then export its credentials (or put them in a ``.env`` file):
+
+.. code-block:: bash
+
+   export QUICKUP_CLIENT_ID=your_client_id
+   export QUICKUP_CLIENT_SECRET=your_client_secret
+
+If either variable is missing, ``quickup login`` exits with code ``6`` and prints the setup
+hint instead of opening a browser.
 
 Examples
 ~~~~~~~~
 
-Log in with the default QuickUp! OAuth application:
+Log in using the credentials exported above:
 
 .. code-block:: bash
 
+   quickup login
+
+Or read them from a ``.env`` file in the current directory:
+
+.. code-block:: bash
+
+   echo 'QUICKUP_CLIENT_ID=your_client_id' >> .env
+   echo 'QUICKUP_CLIENT_SECRET=your_client_secret' >> .env
    quickup login
 
 ``quickup logout`` - Remove Stored Credentials

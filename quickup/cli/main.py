@@ -8,7 +8,7 @@ from pyclickup import ClickUp
 import requests
 
 from .api_client import get_current_sprint_list, get_list_for, get_project_for, get_space_for, get_team
-from .auth import delete_oauth_token, perform_oauth_login, save_oauth_token
+from .auth import delete_oauth_token, get_oauth_config, perform_oauth_login, save_oauth_token
 from .cache import get_task_data, maybe_warmup
 from .config import init_environ
 from .exceptions import ClickupyError, OAuthError, TokenError, handle_exception
@@ -330,6 +330,9 @@ def comment_task(
 @app.command
 def login() -> None:
     """Authenticate with ClickUp via OAuth2 browser login."""
+    # Fail fast with a setup hint if the OAuth app credentials are not configured.
+    get_oauth_config()
+
     print("Opening browser for ClickUp authentication...")
     try:
         access_token, user_info = perform_oauth_login()
@@ -337,6 +340,9 @@ def login() -> None:
         username = user_info.get("username", "unknown")
         email = user_info.get("email", "")
         print(f"Successfully logged in as {username} ({email})")
+    except ClickupyError:
+        # Keep the specific message and hint (e.g. OAuthConfigError) intact.
+        raise
     except Exception as e:
         raise OAuthError(str(e)) from e
 

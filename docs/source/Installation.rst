@@ -37,6 +37,15 @@ After installation, authenticate with ClickUp using one of the methods below.
 Option 1: OAuth Login (Recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+First, point QuickUp! at your own ClickUp OAuth app — no credentials ship with the
+package. Create an app at https://app.clickup.com/settings/apps with the redirect URI
+``http://localhost:4242``, then export its credentials (or add them to a ``.env`` file):
+
+.. code-block:: bash
+
+   export QUICKUP_CLIENT_ID=your_client_id
+   export QUICKUP_CLIENT_SECRET=your_client_secret
+
 Run the login command to authenticate via your browser:
 
 .. code-block:: bash

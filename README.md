@@ -33,9 +33,13 @@ pip install quickup
 
 ## Quick Start
 
-Authenticate with ClickUp (recommended):
+Authenticate with ClickUp (recommended). QuickUp! ships without bundled credentials, so
+first point it at your own ClickUp OAuth app — create one at
+<https://app.clickup.com/settings/apps> with redirect URI `http://localhost:4242`:
 
 ```bash
+export QUICKUP_CLIENT_ID=your_client_id
+export QUICKUP_CLIENT_SECRET=your_client_secret
 quickup login
 ```
 
@@ -69,7 +73,9 @@ Authenticate with ClickUp via OAuth. Opens your default browser and waits for th
 quickup login
 ```
 
-Credentials are saved to `~/.quickup/auth.json` (permissions: `0o600`).
+Requires `QUICKUP_CLIENT_ID` and `QUICKUP_CLIENT_SECRET` (environment or `.env`) pointing at
+your own ClickUp OAuth app; without them the command exits with code `6` and prints a setup
+hint. Credentials are saved to `~/.quickup/auth.json` (permissions: `0o600`).
 
 ### `quickup logout` - Remove Stored Credentials
 

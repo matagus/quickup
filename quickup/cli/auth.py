@@ -9,9 +9,9 @@ from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 import webbrowser
 
-# Default OAuth app credentials — override via QUICKUP_CLIENT_ID / QUICKUP_CLIENT_SECRET env vars
-_DEFAULT_CLIENT_ID = "G0F2EFTGBIKJD3YY3EOWGMPZZ4ENRYWK"
-_DEFAULT_CLIENT_SECRET = "4K8KUVGU9CFQZ83TSGABMJM30KJ3BE5L8H8HAAPI6OZOPBJ54JE05DJL91VR575A"
+import dotenv
+
+from .exceptions import OAuthConfigError
 
 AUTH_DIR = Path.home() / ".quickup"
 AUTH_FILE = AUTH_DIR / "auth.json"
@@ -26,10 +26,29 @@ _CALLBACK_TIMEOUT = 120  # seconds
 
 
 def get_oauth_config() -> tuple[str, str]:
-    """Return (client_id, client_secret) from env vars or defaults."""
-    client_id = os.environ.get("QUICKUP_CLIENT_ID", _DEFAULT_CLIENT_ID)
-    client_secret = os.environ.get("QUICKUP_CLIENT_SECRET", _DEFAULT_CLIENT_SECRET)
-    return client_id, client_secret
+    """Return the (client_id, client_secret) of the ClickUp OAuth app to use.
+
+    Credentials are never bundled with the package: they come from
+    ``QUICKUP_CLIENT_ID`` / ``QUICKUP_CLIENT_SECRET`` in the environment or in a
+    local ``.env`` file. Register your own app at
+    https://app.clickup.com/settings/apps with redirect URI
+    ``http://localhost:4242``.
+
+    Raises:
+        OAuthConfigError: if either credential is missing or blank.
+    """
+    # Pick up a local .env without overriding variables already in the environment.
+    dotenv.load_dotenv(".env")
+
+    credentials = {
+        "QUICKUP_CLIENT_ID": os.environ.get("QUICKUP_CLIENT_ID", "").strip(),
+        "QUICKUP_CLIENT_SECRET": os.environ.get("QUICKUP_CLIENT_SECRET", "").strip(),
+    }
+    missing = [name for name, value in credentials.items() if not value]
+    if missing:
+        raise OAuthConfigError(missing)
+
+    return credentials["QUICKUP_CLIENT_ID"], credentials["QUICKUP_CLIENT_SECRET"]
 
 
 def load_oauth_token() -> str | None:
@@ -178,6 +197,7 @@ def perform_oauth_login() -> tuple[str, dict]:
         Tuple of (access_token, user_info dict).
 
     Raises:
+        OAuthConfigError: If the OAuth app credentials are not configured.
         RuntimeError: If the OAuth flow fails at any step.
     """
     client_id, client_secret = get_oauth_config()

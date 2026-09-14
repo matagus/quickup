@@ -127,6 +127,20 @@ class OAuthError(ClickupyError):
         super().__init__(message, "Try running 'quickup login' again.")
 
 
+class OAuthConfigError(ClickupyError):
+    """Raised when the ClickUp OAuth app credentials are not configured."""
+
+    exit_code = 6
+
+    def __init__(self, missing: list[str]):
+        super().__init__(
+            f"Missing OAuth app credential{'s' if len(missing) > 1 else ''}: {', '.join(missing)}.",
+            "Create an OAuth app at https://app.clickup.com/settings/apps (redirect URI "
+            "http://localhost:4242), then set QUICKUP_CLIENT_ID and QUICKUP_CLIENT_SECRET "
+            "in your environment or in a .env file.",
+        )
+
+
 class NetworkError(ClickupyError):
     """Raised for HTTP/connection failures."""
 

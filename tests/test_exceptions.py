@@ -7,6 +7,7 @@ from quickup.cli.exceptions import (
     ClickupyError,
     ListNotFoundError,
     NetworkError,
+    OAuthConfigError,
     ProjectNotFoundError,
     SpaceNotFoundError,
     TeamAmbiguousError,
@@ -112,6 +113,29 @@ class TestListNotFoundError:
         """Test with specific list ID."""
         exc = ListNotFoundError(list_id="list-000")
         assert "List 'list-000' not found" in exc.message
+
+
+class TestOAuthConfigError:
+    """Tests for OAuthConfigError."""
+
+    def test_single_missing_credential(self):
+        """Test message when only one credential is missing."""
+        exc = OAuthConfigError(["QUICKUP_CLIENT_SECRET"])
+        assert exc.message == "Missing OAuth app credential: QUICKUP_CLIENT_SECRET."
+        assert "QUICKUP_CLIENT_ID" not in exc.message
+        assert exc.exit_code == 6
+
+    def test_multiple_missing_credentials(self):
+        """Test message when both credentials are missing."""
+        exc = OAuthConfigError(["QUICKUP_CLIENT_ID", "QUICKUP_CLIENT_SECRET"])
+        assert exc.message == "Missing OAuth app credentials: QUICKUP_CLIENT_ID, QUICKUP_CLIENT_SECRET."
+
+    def test_hint_explains_setup(self):
+        """Test the hint tells the user how to configure the OAuth app."""
+        exc = OAuthConfigError(["QUICKUP_CLIENT_ID"])
+        assert "app.clickup.com/settings/apps" in str(exc)
+        assert "http://localhost:4242" in str(exc)
+        assert "QUICKUP_CLIENT_SECRET" in str(exc)
 
 
 class TestNetworkError:
