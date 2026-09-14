@@ -9,7 +9,38 @@ on:
       - main
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install docs dependencies
+        run: pip install -e ".[docs]"
+
+      - name: Build HTML docs
+        run: sphinx-build -b html docs/source/ docs/build/html
+
   test:
+    needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -37,32 +68,21 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run pre-commit
-        run: |
-          pip install pre-commit
-          pre-commit run --all-files --show-diff-on-failure
-
       - name: Run tests with coverage
         run: |
           pytest tests/ -v --cov=quickup --cov-report=xml
 
+      # Upload coverage once (Codecov merges nothing useful across identical runs)
       - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
-
-      #----------------------------------------------
-      #            make sure docs build
-      #----------------------------------------------
-      - name: Install docs dependencies
-        run: pip install -e ".[docs]"
-
-      - name: Build HTML docs
-        run: sphinx-build -b html docs/source/ docs/build/html
