@@ -105,14 +105,19 @@ class _OAuthCallbackHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "text/html")
         self.end_headers()
+        # NOTE: keep the emoji choice out of the f-string. pyupgrade corrupts
+        # multi-line f-strings that embed `{'x' if cond else 'y'}` with non-ASCII
+        # literals: it re-emits the literal with shifted offsets and appends junk
+        # to the closing quote on every run (pyupgrade 3.21.2, all --pyNN-plus tiers).
+        icon = "✅" if status == 200 else "❌"
         html = f"""<!DOCTYPE html>
 <html><head><title>QuickUp! Login</title></head>
 <body style="font-family: system-ui, sans-serif; display: flex; justify-content: center;
 align-items: center; height: 100vh; margin: 0; background: #f5f5f5;">
 <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px;
 box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-<h2>{'✅' if status == 200 else '❌'} {message}</h2>
-</div></body></html>l>l>l>l>"""
+<h2>{icon} {message}</h2>
+</div></body></html>"""
         self.wfile.write(html.encode())
 
     def log_message(self, format: str, *args: object) -> None:
