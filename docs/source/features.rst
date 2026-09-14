@@ -15,6 +15,17 @@ QuickUp! supports two authentication modes:
    quickup login   # opens browser, saves token to ~/.quickup/auth.json
    quickup logout  # removes the stored token
 
+OAuth login uses your own ClickUp OAuth app — no credentials are bundled with QuickUp!.
+Create an app at https://app.clickup.com/settings/apps with redirect URI
+``http://localhost:4242`` and export its credentials first:
+
+.. code-block:: bash
+
+   export QUICKUP_CLIENT_ID=your_client_id
+   export QUICKUP_CLIENT_SECRET=your_client_secret
+
+Both values may also live in a ``.env`` file in the current directory.
+
 **API Token** — set a personal token via environment variable or ``.env`` file:
 
 .. code-block:: bash

@@ -2,6 +2,7 @@
 
 from io import BytesIO
 import json
+import os
 import sys
 from typing import cast
 from unittest.mock import Mock, patch
@@ -19,6 +20,7 @@ from quickup.cli.auth import (
     save_oauth_token,
 )
 from quickup.cli.config import init_environ
+from quickup.cli.exceptions import OAuthConfigError
 
 
 class TestTokenStorage:
@@ -81,22 +83,84 @@ class TestTokenStorage:
         stat = auth_file.stat()
         assert stat.st_mode & 0o777 == 0o600
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows does not support Unix file permissions")
+    def test_save_token_ignores_permissive_umask(self, tmp_path, monkeypatch):
+        auth_file = tmp_path / "auth.json"
+        monkeypatch.setattr("quickup.cli.auth.AUTH_FILE", auth_file)
+        monkeypatch.setattr("quickup.cli.auth.AUTH_DIR", tmp_path)
+
+        previous_umask = os.umask(0o000)
+        try:
+            save_oauth_token("secret-token")
+        finally:
+            os.umask(previous_umask)
+
+        assert auth_file.stat().st_mode & 0o777 == 0o600
+
+    def test_save_token_leaves_no_temp_file(self, tmp_path, monkeypatch):
+        auth_file = tmp_path / "auth.json"
+        monkeypatch.setattr("quickup.cli.auth.AUTH_FILE", auth_file)
+        monkeypatch.setattr("quickup.cli.auth.AUTH_DIR", tmp_path)
+
+        save_oauth_token("token-1")
+        save_oauth_token("token-2")
+
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["auth.json"]
+        assert json.loads(auth_file.read_text())["access_token"] == "token-2"
+
 
 class TestOAuthConfig:
     """Tests for OAuth client config resolution."""
 
-    def test_default_config(self):
-        config = get_oauth_config()
-        assert len(config) == 2
-        assert isinstance(config[0], str)
-        assert isinstance(config[1], str)
+    @pytest.fixture(autouse=True)
+    def _isolate_credentials(self, tmp_path, monkeypatch):
+        """Start from a clean slate: no inherited env vars, no repo .env file."""
+        monkeypatch.delenv("QUICKUP_CLIENT_ID", raising=False)
+        monkeypatch.delenv("QUICKUP_CLIENT_SECRET", raising=False)
+        monkeypatch.chdir(tmp_path)
 
-    def test_env_var_override(self, monkeypatch):
+    def test_no_bundled_defaults(self):
+        """Credentials must come from the environment, never from the package."""
+        with pytest.raises(OAuthConfigError) as exc_info:
+            get_oauth_config()
+        assert exc_info.value.message == "Missing OAuth app credentials: QUICKUP_CLIENT_ID, QUICKUP_CLIENT_SECRET."
+        assert exc_info.value.exit_code == 6
+
+    def test_partial_credentials_raise(self, monkeypatch):
+        """A client ID without its secret is not enough to log in."""
+        monkeypatch.setenv("QUICKUP_CLIENT_ID", "my-id")
+        with pytest.raises(OAuthConfigError) as exc_info:
+            get_oauth_config()
+        assert exc_info.value.message == "Missing OAuth app credential: QUICKUP_CLIENT_SECRET."
+
+    def test_blank_credentials_raise(self, monkeypatch):
+        """Empty or whitespace-only values count as missing."""
+        monkeypatch.setenv("QUICKUP_CLIENT_ID", "   ")
+        monkeypatch.setenv("QUICKUP_CLIENT_SECRET", "")
+        with pytest.raises(OAuthConfigError):
+            get_oauth_config()
+
+    def test_env_var_credentials(self, monkeypatch):
         monkeypatch.setenv("QUICKUP_CLIENT_ID", "my-id")
         monkeypatch.setenv("QUICKUP_CLIENT_SECRET", "my-secret")
-        client_id, client_secret = get_oauth_config()
-        assert client_id == "my-id"
-        assert client_secret == "my-secret"
+        assert get_oauth_config() == ("my-id", "my-secret")
+
+    def test_env_var_credentials_are_trimmed(self, monkeypatch):
+        monkeypatch.setenv("QUICKUP_CLIENT_ID", "  my-id  ")
+        monkeypatch.setenv("QUICKUP_CLIENT_SECRET", " my-secret\n")
+        assert get_oauth_config() == ("my-id", "my-secret")
+
+    def test_reads_dotenv_file(self, tmp_path):
+        """A .env in the working directory supplies the credentials."""
+        (tmp_path / ".env").write_text("QUICKUP_CLIENT_ID=dotenv-id\nQUICKUP_CLIENT_SECRET=dotenv-secret\n")
+        assert get_oauth_config() == ("dotenv-id", "dotenv-secret")
+
+    def test_real_environment_wins_over_dotenv(self, tmp_path, monkeypatch):
+        """load_dotenv must not clobber variables already set in the environment."""
+        (tmp_path / ".env").write_text("QUICKUP_CLIENT_ID=dotenv-id\nQUICKUP_CLIENT_SECRET=dotenv-secret\n")
+        monkeypatch.setenv("QUICKUP_CLIENT_ID", "env-id")
+        monkeypatch.setenv("QUICKUP_CLIENT_SECRET", "env-secret")
+        assert get_oauth_config() == ("env-id", "env-secret")
 
 
 class TestCallbackHandler:
@@ -193,6 +257,26 @@ class TestFetchUserInfo:
 
 class TestPerformOAuthLogin:
     """Tests for the full OAuth login flow."""
+
+    @pytest.fixture(autouse=True)
+    def _oauth_credentials(self, tmp_path, monkeypatch):
+        """Provide configured credentials so these tests focus on the flow itself."""
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("QUICKUP_CLIENT_ID", "test-client-id")
+        monkeypatch.setenv("QUICKUP_CLIENT_SECRET", "test-client-secret")
+
+    @patch("quickup.cli.auth.webbrowser.open")
+    @patch("quickup.cli.auth.HTTPServer")
+    def test_missing_credentials_fail_before_opening_browser(self, mock_server_cls, mock_browser, monkeypatch):
+        """Fail fast with a setup hint instead of opening a doomed browser tab."""
+        monkeypatch.delenv("QUICKUP_CLIENT_ID")
+        monkeypatch.delenv("QUICKUP_CLIENT_SECRET")
+
+        with pytest.raises(OAuthConfigError):
+            perform_oauth_login()
+
+        mock_browser.assert_not_called()
+        mock_server_cls.assert_not_called()
 
     @patch("quickup.cli.auth._fetch_user_info")
     @patch("quickup.cli.auth._exchange_code_for_token")

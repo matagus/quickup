@@ -143,6 +143,8 @@ source = ["quickup"]
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
+# Hard gate: coverage below 90% fails the test run (CI included).
+fail_under = 90
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
