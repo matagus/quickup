@@ -52,7 +52,7 @@ docs = [
   # Sphinx 9.1+ requires Python 3.12; 9.0.x is the last line supporting the 3.11 floor.
   "sphinx>=9.0.4,<10",
   "sphinx_rtd_theme>=3.1.0,<4",
-  "gitpython>=3.1.62,<4",
+  "gitpython>=3.2.1,<4",
   "sphinx-copybutton>=0.5.2,<1",
 ]
 
@@ -87,7 +87,7 @@ install = "pip install -e .[dev]"
 dependencies = [
     "sphinx>=9.0.4,<10",
     "sphinx_rtd_theme>=3.1.0,<4",
-    "gitpython>=3.1.62,<4",
+    "gitpython>=3.2.1,<4",
     "sphinx-copybutton>=0.5.2,<1",
 ]
 
